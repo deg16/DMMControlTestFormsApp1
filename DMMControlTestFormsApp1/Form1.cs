@@ -331,7 +331,7 @@ namespace DMMControlTestFormsApp1
             {
                 mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
                 mbSession4.RawIO.Write("TM1,TM2");     //状態のWrite
-                Thread.Sleep(TimeSpan.FromSeconds(1));  //WriteとReadでのスパンを決めないとRead出来ない
+                Thread.Sleep(TimeSpan.FromSeconds(0.1));  //WriteとReadでのスパンを決めないとRead出来ない
                 SettingConditionBox.Text = mbSession4.RawIO.ReadString();
                 mbSession4.Dispose();
             }
@@ -374,7 +374,7 @@ namespace DMMControlTestFormsApp1
                 mbSession2.RawIO.Write("F2");        //二次の電流用電圧　V＝0.2/50A
                 mbSession3.RawIO.Write("F2");        //熱電対起電力
                 mbSession4.RawIO.Write("TM0");        //1次の電源電圧のステータスを直接電源シミュレータに聞く
-                Thread.Sleep(TimeSpan.FromSeconds(1));  //WriteとReadでのスパンを決めないとRead出来ない
+                //Thread.Sleep(TimeSpan.FromSeconds(0.1));  //WriteとReadでのスパンを決めないとRead出来ない→今の機器（ADVANTESTやったらスパンなくてもよさそう）
 
                 string voltageData = mbSession1.RawIO.ReadString();
                 string CrampVoltData = mbSession2.RawIO.ReadString();
@@ -878,3 +878,5 @@ namespace DMMControlTestFormsApp1
 //開発したアプリケーションをほかのPCでも起動できるのか。PATHなどもしくは.exeとして実装出来ないのか
 //Uiの改善
 //PID制御の導入　(目標温度を入力すると自動で、制御ができるもの）
+
+//timer1の設定及び保存データ点数の調整
