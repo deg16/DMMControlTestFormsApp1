@@ -51,7 +51,7 @@ namespace DMMControlTestFormsApp1
 
         private float PresetV = 0;//PresetV(設定電圧)の現在の値
 
-        //double ElectricPowerValue = new double();
+        List<String> elapsedTimes = new List<String>();
         List<double> voltageValues = new List<double>();
         List<double> PrimVoltageValues = new List<double>();
         List<double> currentValues = new List<double>();
@@ -91,11 +91,13 @@ namespace DMMControlTestFormsApp1
             chart5.Series.Add(Tseries5);
 
             // チャートの軸の設定
-            chart1.ChartAreas[0].AxisX.Title = "Time (seconds)";
-            chart2.ChartAreas[0].AxisX.Title = "Time (seconds)";
-            chart3.ChartAreas[0].AxisX.Title = "Time (seconds)";
-            chart4.ChartAreas[0].AxisX.Title = "Time (seconds)";
-            chart5.ChartAreas[0].AxisX.Title = "Time (seconds)";
+            //チャート目盛り消す
+            chart1.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            chart2.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            chart3.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            chart4.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            chart5.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            //チャートのタイトル
             chart1.ChartAreas[0].AxisY.Title = "Voltage(V)";
             chart2.ChartAreas[0].AxisY.Title = "Current(A)";
             chart3.ChartAreas[0].AxisY.Title = "Resistance(Ω)";
@@ -402,7 +404,7 @@ namespace DMMControlTestFormsApp1
         }
         private double ExtractValue(string SourceData, char identifier)     //電源から直接電圧電流を測定した時の文字列から数値データとして取り出す
         {
-            string pattern = @"([-+]?\d+(\.\d+)?)\s*" + identifier;
+            string pattern = @"([-+]?\d+(\.\d+)?)\s*" + identifier;     //電源シミュレータごとの出力文字列に合わせてコーディング
             Match match = Regex.Match(SourceData, pattern);
 
             if (match.Success && double.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
@@ -656,6 +658,7 @@ namespace DMMControlTestFormsApp1
         private void ResetAndResumeMeasurement()　 // データをリセットする処理
         {
             // データを格納しているリストをクリア
+            elapsedTimes.Clear();
             voltageValues.Clear();
             currentValues.Clear();
             resistanceValues.Clear();
@@ -752,26 +755,26 @@ namespace DMMControlTestFormsApp1
         {
             using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))      //UTF-8エンコーディングを使用、文字化け対策
             {
-                //TimeSpan elapsed = stopwatch.Elapsed;
-                //string elapsedtime = elapsed.ToString(@"hh\:/mm:ss");
                 //時間、測定モード
                 string modetext = ModeBox.Text;
                 string stopwatchtext = StopWatchlabel.Text;
                 writer.WriteLine(modetext);
                 writer.WriteLine(stopwatchtext);
-                //writer.WriteLine(modetext, elapsedtime);
+
                 // 列の名前を出力
-                writer.WriteLine("2次電圧(V),2次電流(A),2次抵抗(Ω),2次電力(VA),温度(℃),1次電圧(V),1次電流(A),1次電力(VA)");
+                writer.WriteLine("測定時間,2次電圧(V),2次電流(A),2次抵抗(Ω),2次電力(VA),温度(℃),1次電圧(V),1次電流(A),1次電力(VA)");
                 //各列のデータ
-                for (int i = 0; i < voltageValues.Count;  i++)
+                for (int i = 0; i < elapsedTimes.Count;  i++)
                 {
-                    writer.WriteLine($"{voltageValues[i]}, {currentValues[i]}, {resistanceValues[i]}, {electricPowerValues[i]}, {temperatureValues[i]}, {PrimVoltageValues[i]}, {PrimCurrentValues[i]}, {PrimelEctricPowerValues[i]}");
+                    writer.WriteLine($"{elapsedTimes[i]},{voltageValues[i]}, {currentValues[i]}, {resistanceValues[i]}, {electricPowerValues[i]}, {temperatureValues[i]}, {PrimVoltageValues[i]}, {PrimCurrentValues[i]}, {PrimelEctricPowerValues[i]}");
                 }
             }
         }
-        private void UpdateElapsedTime()        //測定時間としてForm上で表示させる用
+        private void UpdateElapsedTime()        //測定時間
         {
             TimeSpan elapsed = stopwatch.Elapsed;
+            string elapsedString = elapsed.ToString(@"hh\:mm\:ss");
+            elapsedTimes.Add(elapsedString);
             StopWatchlabel.Text = $"測定時間:{elapsed.ToString(@"hh\:mm\:ss")}";
         }
 
@@ -879,4 +882,4 @@ namespace DMMControlTestFormsApp1
 //Uiの改善
 //PID制御の導入　(目標温度を入力すると自動で、制御ができるもの）
 
-//timer1の設定及び保存データ点数の調整
+//timer1 測定周期　~0.5　
