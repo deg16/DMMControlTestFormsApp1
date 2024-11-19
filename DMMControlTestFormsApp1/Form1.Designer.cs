@@ -104,6 +104,9 @@
             this.PrimRBox = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.FrequencySet = new System.Windows.Forms.Button();
+            this.SaveSpanBox = new System.Windows.Forms.TextBox();
+            this.SaveSpanUp = new System.Windows.Forms.Button();
+            this.SaveSpanDown = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart3)).BeginInit();
@@ -195,7 +198,7 @@
             this.FittingCSV});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1735, 28);
+            this.menuStrip1.Size = new System.Drawing.Size(1735, 29);
             this.menuStrip1.TabIndex = 6;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -205,7 +208,7 @@
             this.ThermoCoupleToolStripMenuItem,
             this.ElectricPowerToolStripMenuItem});
             this.ModeSelectMenu.Name = "ModeSelectMenu";
-            this.ModeSelectMenu.Size = new System.Drawing.Size(62, 24);
+            this.ModeSelectMenu.Size = new System.Drawing.Size(62, 25);
             this.ModeSelectMenu.Text = "Mode";
             // 
             // ThermoCoupleToolStripMenuItem
@@ -259,7 +262,7 @@
             this.FittingCSV.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.FittingEPCSVToolStrip});
             this.FittingCSV.Name = "FittingCSV";
-            this.FittingCSV.Size = new System.Drawing.Size(46, 24);
+            this.FittingCSV.Size = new System.Drawing.Size(46, 25);
             this.FittingCSV.Text = "File";
             // 
             // FittingEPCSVToolStrip
@@ -574,7 +577,7 @@
             // 
             this.RecordButton.BackColor = System.Drawing.Color.White;
             this.RecordButton.Font = new System.Drawing.Font("游ゴシック", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.RecordButton.Location = new System.Drawing.Point(842, 875);
+            this.RecordButton.Location = new System.Drawing.Point(949, 876);
             this.RecordButton.Margin = new System.Windows.Forms.Padding(4);
             this.RecordButton.Name = "RecordButton";
             this.RecordButton.Size = new System.Drawing.Size(154, 80);
@@ -836,11 +839,45 @@
             this.FrequencySet.UseVisualStyleBackColor = true;
             this.FrequencySet.Click += new System.EventHandler(this.FrequencySet_Click);
             // 
+            // SaveSpanBox
+            // 
+            this.SaveSpanBox.BackColor = System.Drawing.SystemColors.Info;
+            this.SaveSpanBox.Font = new System.Drawing.Font("MS UI Gothic", 16.27826F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.SaveSpanBox.Location = new System.Drawing.Point(806, 908);
+            this.SaveSpanBox.Multiline = true;
+            this.SaveSpanBox.Name = "SaveSpanBox";
+            this.SaveSpanBox.ReadOnly = true;
+            this.SaveSpanBox.Size = new System.Drawing.Size(115, 47);
+            this.SaveSpanBox.TabIndex = 68;
+            // 
+            // SaveSpanUp
+            // 
+            this.SaveSpanUp.AutoSize = true;
+            this.SaveSpanUp.Location = new System.Drawing.Point(921, 909);
+            this.SaveSpanUp.Name = "SaveSpanUp";
+            this.SaveSpanUp.Size = new System.Drawing.Size(32, 25);
+            this.SaveSpanUp.TabIndex = 69;
+            this.SaveSpanUp.Text = "▲";
+            this.SaveSpanUp.UseVisualStyleBackColor = true;
+            // 
+            // SaveSpanDown
+            // 
+            this.SaveSpanDown.AutoSize = true;
+            this.SaveSpanDown.Location = new System.Drawing.Point(921, 933);
+            this.SaveSpanDown.Name = "SaveSpanDown";
+            this.SaveSpanDown.Size = new System.Drawing.Size(32, 25);
+            this.SaveSpanDown.TabIndex = 70;
+            this.SaveSpanDown.Text = "▼";
+            this.SaveSpanDown.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1735, 993);
+            this.Controls.Add(this.SaveSpanDown);
+            this.Controls.Add(this.SaveSpanUp);
+            this.Controls.Add(this.SaveSpanBox);
             this.Controls.Add(this.FrequencySet);
             this.Controls.Add(this.PrimRBox);
             this.Controls.Add(this.label1);
@@ -990,6 +1027,9 @@
         private System.Windows.Forms.TextBox PrimRBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button FrequencySet;
+        private System.Windows.Forms.Button SaveSpanDown;
+        private System.Windows.Forms.Button SaveSpanUp;
+        private System.Windows.Forms.TextBox SaveSpanBox;
     }
 }
 

@@ -51,6 +51,9 @@ namespace DMMControlTestFormsApp1
 
         private float PresetV = 0;//PresetV(設定電圧)の現在の値
 
+        private float SaveSpan = 1.0f;
+        private int SaveSpanCmd;
+
         List<String> elapsedTimes = new List<String>();
         List<double> voltageValues = new List<double>();
         List<double> PrimVoltageValues = new List<double>();
@@ -313,17 +316,20 @@ namespace DMMControlTestFormsApp1
         {
             //立ち上げ設定
             useModeSelect = 0;
-            HeaterControl();
-            SettingCondition();
+            //HeaterControl();
+            //SettingCondition();
             timer1.Start();     //timer作動
             stopwatch.Stop();
+
+            //SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+
         }
         private void HeaterControl()
         {
             using (var rmSession4 = new ResourceManager())
             {
                 mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
-                mbSession4.RawIO.Write("FQ50,ZA0");     //抵抗値のWrite
+                mbSession4.RawIO.Write("FQ50,ZA0");     //周波数50，インピーダンス0%に初期設定
                 mbSession4.Dispose();
             }
         }
@@ -764,7 +770,8 @@ namespace DMMControlTestFormsApp1
                 // 列の名前を出力
                 writer.WriteLine("測定時間,2次電圧(V),2次電流(A),2次抵抗(Ω),2次電力(VA),温度(℃),1次電圧(V),1次電流(A),1次電力(VA)");
                 //各列のデータ
-                for (int i = 0; i < elapsedTimes.Count;  i++)
+                for (int i = 0; i < voltageValues.Count;  i ++)
+                //for (int i = 0; i < voltageValues.Count;  i += SaveSpanCmd)
                 {
                     writer.WriteLine($"{elapsedTimes[i]},{voltageValues[i]}, {currentValues[i]}, {resistanceValues[i]}, {electricPowerValues[i]}, {temperatureValues[i]}, {PrimVoltageValues[i]}, {PrimCurrentValues[i]}, {PrimelEctricPowerValues[i]}");
                 }
@@ -837,6 +844,54 @@ namespace DMMControlTestFormsApp1
             mbSession4.RawIO.Write(Frequency);     //出力のWrite ON
             mbSession4.Dispose();
         }
+
+        //private void SaveSpanUp_Click(object sender, EventArgs e)
+        //{
+        //    if (float.TryParse(SaveSpanBox.Text, out SaveSpan))
+        //    {
+        //        SaveSpan *= 2f; // テキストボックスの値を*2する
+        //        SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+
+        //        if (SaveSpan > 128f)
+        //        {
+        //            SaveSpan = 128f;
+        //            SaveSpanBox.Text = SaveSpan.ToString();
+        //            return;
+        //        }
+
+        //        int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
+        //    }
+        //    else
+        //    {
+        //        // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+
+        //}
+
+        //private void SaveSpanDown_Click(object sender, EventArgs e)
+        //{
+        //    if (float.TryParse(SaveSpanBox.Text, out SaveSpan))
+        //    {
+        //        SaveSpan /= 2f; // テキストボックスの値を÷10する
+        //        SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+
+        //        if (SaveSpan < 0.5f)
+        //        {
+        //            SaveSpan = 0.5f;
+        //            SaveSpanBox.Text = SaveSpan.ToString();
+        //            return;
+        //        }
+
+        //        int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
+        //    }
+        //    else
+        //    {
+        //        // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+
+        //}
 
         //private void PIDControl(object sender, EventArgs e)
         //{
