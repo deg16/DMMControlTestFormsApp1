@@ -56,7 +56,7 @@
             this.SourceCurrent = new System.Windows.Forms.Label();
             this.SourceVoltage = new System.Windows.Forms.Label();
             this.ApparentRegistance = new System.Windows.Forms.Label();
-            this.Temperature = new System.Windows.Forms.Label();
+            this.TemperatureLabel = new System.Windows.Forms.Label();
             this.SourceEPower = new System.Windows.Forms.Label();
             this.ElectroMotiveForce = new System.Windows.Forms.Label();
             this.PresetTemperature = new System.Windows.Forms.Label();
@@ -66,7 +66,7 @@
             this.UpperEPower = new System.Windows.Forms.Label();
             this.HeatVBox = new System.Windows.Forms.TextBox();
             this.TemperatureBox = new System.Windows.Forms.TextBox();
-            this.PresetTBox = new System.Windows.Forms.TextBox();
+            this.TargetTBox = new System.Windows.Forms.TextBox();
             this.KelvinBox = new System.Windows.Forms.TextBox();
             this.SourceVBox = new System.Windows.Forms.TextBox();
             this.SourceABox = new System.Windows.Forms.TextBox();
@@ -98,7 +98,7 @@
             this.PresetViDown = new System.Windows.Forms.Button();
             this.PresetViup = new System.Windows.Forms.Button();
             this.PresetVSet = new System.Windows.Forms.Button();
-            this.SettingConditionBox = new System.Windows.Forms.TextBox();
+            this.T0Box = new System.Windows.Forms.TextBox();
             this.SecondVABox = new System.Windows.Forms.TextBox();
             this.SecondVA = new System.Windows.Forms.Label();
             this.PrimRBox = new System.Windows.Forms.TextBox();
@@ -107,6 +107,20 @@
             this.SaveSpanBox = new System.Windows.Forms.TextBox();
             this.SaveSpanUp = new System.Windows.Forms.Button();
             this.SaveSpanDown = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.PgainDownButton = new System.Windows.Forms.Button();
+            this.PgainUpButton = new System.Windows.Forms.Button();
+            this.DgainDownButon = new System.Windows.Forms.Button();
+            this.DgainUpButton = new System.Windows.Forms.Button();
+            this.IgainDownButton = new System.Windows.Forms.Button();
+            this.IgainUpButton = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
+            this.button3 = new System.Windows.Forms.Button();
+            this.button4 = new System.Windows.Forms.Button();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart3)).BeginInit();
@@ -325,15 +339,15 @@
             this.ApparentRegistance.TabIndex = 19;
             this.ApparentRegistance.Text = "２次抵抗(Ω)";
             // 
-            // Temperature
+            // TemperatureLabel
             // 
-            this.Temperature.Font = new System.Drawing.Font("游ゴシック", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.Temperature.Location = new System.Drawing.Point(38, 238);
-            this.Temperature.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.Temperature.Name = "Temperature";
-            this.Temperature.Size = new System.Drawing.Size(186, 31);
-            this.Temperature.TabIndex = 20;
-            this.Temperature.Text = "温度(℃)";
+            this.TemperatureLabel.Font = new System.Drawing.Font("游ゴシック", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.TemperatureLabel.Location = new System.Drawing.Point(38, 238);
+            this.TemperatureLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.TemperatureLabel.Name = "TemperatureLabel";
+            this.TemperatureLabel.Size = new System.Drawing.Size(186, 31);
+            this.TemperatureLabel.TabIndex = 20;
+            this.TemperatureLabel.Text = "温度(℃)";
             // 
             // SourceEPower
             // 
@@ -349,7 +363,7 @@
             // 
             this.ElectroMotiveForce.Font = new System.Drawing.Font("游ゴシック", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
             this.ElectroMotiveForce.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.ElectroMotiveForce.Location = new System.Drawing.Point(38, 174);
+            this.ElectroMotiveForce.Location = new System.Drawing.Point(38, 126);
             this.ElectroMotiveForce.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ElectroMotiveForce.Name = "ElectroMotiveForce";
             this.ElectroMotiveForce.Size = new System.Drawing.Size(186, 31);
@@ -411,7 +425,7 @@
             // 
             this.HeatVBox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.HeatVBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.HeatVBox.Location = new System.Drawing.Point(245, 163);
+            this.HeatVBox.Location = new System.Drawing.Point(245, 115);
             this.HeatVBox.Margin = new System.Windows.Forms.Padding(4);
             this.HeatVBox.Multiline = true;
             this.HeatVBox.Name = "HeatVBox";
@@ -431,17 +445,17 @@
             this.TemperatureBox.Size = new System.Drawing.Size(159, 41);
             this.TemperatureBox.TabIndex = 30;
             // 
-            // PresetTBox
+            // TargetTBox
             // 
-            this.PresetTBox.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.PresetTBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.PresetTBox.Location = new System.Drawing.Point(245, 285);
-            this.PresetTBox.Margin = new System.Windows.Forms.Padding(4);
-            this.PresetTBox.Multiline = true;
-            this.PresetTBox.Name = "PresetTBox";
-            this.PresetTBox.ShortcutsEnabled = false;
-            this.PresetTBox.Size = new System.Drawing.Size(159, 41);
-            this.PresetTBox.TabIndex = 31;
+            this.TargetTBox.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.TargetTBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.TargetTBox.Location = new System.Drawing.Point(245, 285);
+            this.TargetTBox.Margin = new System.Windows.Forms.Padding(4);
+            this.TargetTBox.Multiline = true;
+            this.TargetTBox.Name = "TargetTBox";
+            this.TargetTBox.ShortcutsEnabled = false;
+            this.TargetTBox.Size = new System.Drawing.Size(159, 41);
+            this.TargetTBox.TabIndex = 31;
             // 
             // KelvinBox
             // 
@@ -593,11 +607,11 @@
             // 
             // FunctionTextBox
             // 
-            this.FunctionTextBox.Location = new System.Drawing.Point(412, 110);
+            this.FunctionTextBox.Location = new System.Drawing.Point(734, 50);
             this.FunctionTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.FunctionTextBox.Multiline = true;
             this.FunctionTextBox.Name = "FunctionTextBox";
-            this.FunctionTextBox.Size = new System.Drawing.Size(334, 42);
+            this.FunctionTextBox.Size = new System.Drawing.Size(369, 50);
             this.FunctionTextBox.TabIndex = 44;
             // 
             // SecondVBox
@@ -689,7 +703,7 @@
             // frequency
             // 
             this.frequency.Font = new System.Drawing.Font("游ゴシック", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.frequency.Location = new System.Drawing.Point(583, 172);
+            this.frequency.Location = new System.Drawing.Point(580, 126);
             this.frequency.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.frequency.Name = "frequency";
             this.frequency.Size = new System.Drawing.Size(186, 31);
@@ -698,25 +712,29 @@
             // 
             // IgainBox
             // 
+            this.IgainBox.Font = new System.Drawing.Font("MS UI Gothic", 16.27826F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
             this.IgainBox.Location = new System.Drawing.Point(790, 342);
             this.IgainBox.Margin = new System.Windows.Forms.Padding(4);
             this.IgainBox.Multiline = true;
             this.IgainBox.Name = "IgainBox";
             this.IgainBox.Size = new System.Drawing.Size(159, 41);
             this.IgainBox.TabIndex = 54;
+            this.IgainBox.Text = "0";
             // 
             // DgainBox
             // 
+            this.DgainBox.Font = new System.Drawing.Font("MS UI Gothic", 16.27826F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
             this.DgainBox.Location = new System.Drawing.Point(790, 284);
             this.DgainBox.Margin = new System.Windows.Forms.Padding(4);
             this.DgainBox.Multiline = true;
             this.DgainBox.Name = "DgainBox";
             this.DgainBox.Size = new System.Drawing.Size(159, 41);
             this.DgainBox.TabIndex = 55;
+            this.DgainBox.Text = "0";
             // 
             // FrequencyBox
             // 
-            this.FrequencyBox.Location = new System.Drawing.Point(790, 172);
+            this.FrequencyBox.Location = new System.Drawing.Point(787, 126);
             this.FrequencyBox.Margin = new System.Windows.Forms.Padding(4);
             this.FrequencyBox.Multiline = true;
             this.FrequencyBox.Name = "FrequencyBox";
@@ -725,12 +743,14 @@
             // 
             // PgainBox
             // 
+            this.PgainBox.Font = new System.Drawing.Font("MS UI Gothic", 16.27826F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
             this.PgainBox.Location = new System.Drawing.Point(790, 227);
             this.PgainBox.Margin = new System.Windows.Forms.Padding(4);
             this.PgainBox.Multiline = true;
             this.PgainBox.Name = "PgainBox";
             this.PgainBox.Size = new System.Drawing.Size(159, 41);
             this.PgainBox.TabIndex = 58;
+            this.PgainBox.Text = "0";
             // 
             // Pgain
             // 
@@ -775,14 +795,16 @@
             this.PresetVSet.UseVisualStyleBackColor = true;
             this.PresetVSet.Click += new System.EventHandler(this.PresetVSet_Click);
             // 
-            // SettingConditionBox
+            // T0Box
             // 
-            this.SettingConditionBox.Location = new System.Drawing.Point(13, 58);
-            this.SettingConditionBox.Margin = new System.Windows.Forms.Padding(4);
-            this.SettingConditionBox.Multiline = true;
-            this.SettingConditionBox.Name = "SettingConditionBox";
-            this.SettingConditionBox.Size = new System.Drawing.Size(391, 94);
-            this.SettingConditionBox.TabIndex = 62;
+            this.T0Box.Font = new System.Drawing.Font("MS UI Gothic", 16.27826F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.T0Box.Location = new System.Drawing.Point(245, 172);
+            this.T0Box.Margin = new System.Windows.Forms.Padding(4);
+            this.T0Box.Multiline = true;
+            this.T0Box.Name = "T0Box";
+            this.T0Box.Size = new System.Drawing.Size(159, 41);
+            this.T0Box.TabIndex = 62;
+            this.T0Box.Text = "27";
             // 
             // SecondVABox
             // 
@@ -830,7 +852,7 @@
             // 
             // FrequencySet
             // 
-            this.FrequencySet.Location = new System.Drawing.Point(970, 172);
+            this.FrequencySet.Location = new System.Drawing.Point(967, 126);
             this.FrequencySet.Margin = new System.Windows.Forms.Padding(4);
             this.FrequencySet.Name = "FrequencySet";
             this.FrequencySet.Size = new System.Drawing.Size(48, 42);
@@ -853,28 +875,185 @@
             // SaveSpanUp
             // 
             this.SaveSpanUp.AutoSize = true;
-            this.SaveSpanUp.Location = new System.Drawing.Point(921, 909);
+            this.SaveSpanUp.Location = new System.Drawing.Point(917, 906);
             this.SaveSpanUp.Name = "SaveSpanUp";
             this.SaveSpanUp.Size = new System.Drawing.Size(32, 25);
             this.SaveSpanUp.TabIndex = 69;
             this.SaveSpanUp.Text = "▲";
             this.SaveSpanUp.UseVisualStyleBackColor = true;
+            this.SaveSpanUp.Click += new System.EventHandler(this.SaveSpanUp_Click);
             // 
             // SaveSpanDown
             // 
             this.SaveSpanDown.AutoSize = true;
-            this.SaveSpanDown.Location = new System.Drawing.Point(921, 933);
+            this.SaveSpanDown.Location = new System.Drawing.Point(917, 930);
             this.SaveSpanDown.Name = "SaveSpanDown";
             this.SaveSpanDown.Size = new System.Drawing.Size(32, 25);
             this.SaveSpanDown.TabIndex = 70;
             this.SaveSpanDown.Text = "▼";
             this.SaveSpanDown.UseVisualStyleBackColor = true;
+            this.SaveSpanDown.Click += new System.EventHandler(this.SaveSpanDown_Click);
+            // 
+            // label2
+            // 
+            this.label2.Font = new System.Drawing.Font("游ゴシック", 10.01739F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label2.Location = new System.Drawing.Point(740, 29);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(128, 21);
+            this.label2.TabIndex = 71;
+            this.label2.Text = "W-T eq.";
+            // 
+            // label3
+            // 
+            this.label3.Font = new System.Drawing.Font("游ゴシック", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label3.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.label3.Location = new System.Drawing.Point(38, 182);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(186, 31);
+            this.label3.TabIndex = 72;
+            this.label3.Text = "室温(℃)";
+            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // PgainDownButton
+            // 
+            this.PgainDownButton.AutoSize = true;
+            this.PgainDownButton.Location = new System.Drawing.Point(949, 243);
+            this.PgainDownButton.Name = "PgainDownButton";
+            this.PgainDownButton.Size = new System.Drawing.Size(32, 25);
+            this.PgainDownButton.TabIndex = 74;
+            this.PgainDownButton.Text = "▼";
+            this.PgainDownButton.UseVisualStyleBackColor = true;
+            // 
+            // PgainUpButton
+            // 
+            this.PgainUpButton.AutoSize = true;
+            this.PgainUpButton.Location = new System.Drawing.Point(949, 219);
+            this.PgainUpButton.Name = "PgainUpButton";
+            this.PgainUpButton.Size = new System.Drawing.Size(32, 25);
+            this.PgainUpButton.TabIndex = 73;
+            this.PgainUpButton.Text = "▲";
+            this.PgainUpButton.UseVisualStyleBackColor = true;
+            // 
+            // DgainDownButon
+            // 
+            this.DgainDownButon.AutoSize = true;
+            this.DgainDownButon.Location = new System.Drawing.Point(949, 299);
+            this.DgainDownButon.Name = "DgainDownButon";
+            this.DgainDownButon.Size = new System.Drawing.Size(32, 25);
+            this.DgainDownButon.TabIndex = 76;
+            this.DgainDownButon.Text = "▼";
+            this.DgainDownButon.UseVisualStyleBackColor = true;
+            // 
+            // DgainUpButton
+            // 
+            this.DgainUpButton.AutoSize = true;
+            this.DgainUpButton.Location = new System.Drawing.Point(949, 275);
+            this.DgainUpButton.Name = "DgainUpButton";
+            this.DgainUpButton.Size = new System.Drawing.Size(32, 25);
+            this.DgainUpButton.TabIndex = 75;
+            this.DgainUpButton.Text = "▲";
+            this.DgainUpButton.UseVisualStyleBackColor = true;
+            // 
+            // IgainDownButton
+            // 
+            this.IgainDownButton.AutoSize = true;
+            this.IgainDownButton.Location = new System.Drawing.Point(949, 360);
+            this.IgainDownButton.Name = "IgainDownButton";
+            this.IgainDownButton.Size = new System.Drawing.Size(32, 25);
+            this.IgainDownButton.TabIndex = 78;
+            this.IgainDownButton.Text = "▼";
+            this.IgainDownButton.UseVisualStyleBackColor = true;
+            // 
+            // IgainUpButton
+            // 
+            this.IgainUpButton.AutoSize = true;
+            this.IgainUpButton.Location = new System.Drawing.Point(949, 336);
+            this.IgainUpButton.Name = "IgainUpButton";
+            this.IgainUpButton.Size = new System.Drawing.Size(32, 25);
+            this.IgainUpButton.TabIndex = 77;
+            this.IgainUpButton.Text = "▲";
+            this.IgainUpButton.UseVisualStyleBackColor = true;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(988, 226);
+            this.button1.Margin = new System.Windows.Forms.Padding(4);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(48, 42);
+            this.button1.TabIndex = 79;
+            this.button1.Text = "Set";
+            this.button1.UseVisualStyleBackColor = true;
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(988, 285);
+            this.button2.Margin = new System.Windows.Forms.Padding(4);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(48, 42);
+            this.button2.TabIndex = 80;
+            this.button2.Text = "Set";
+            this.button2.UseVisualStyleBackColor = true;
+            // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(988, 340);
+            this.button3.Margin = new System.Windows.Forms.Padding(4);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(48, 42);
+            this.button3.TabIndex = 81;
+            this.button3.Text = "Set";
+            this.button3.UseVisualStyleBackColor = true;
+            // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(967, 172);
+            this.button4.Margin = new System.Windows.Forms.Padding(4);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(48, 42);
+            this.button4.TabIndex = 84;
+            this.button4.Text = "Set";
+            this.button4.UseVisualStyleBackColor = true;
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(790, 175);
+            this.textBox1.Margin = new System.Windows.Forms.Padding(4);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(159, 41);
+            this.textBox1.TabIndex = 83;
+            // 
+            // label4
+            // 
+            this.label4.Font = new System.Drawing.Font("游ゴシック", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label4.Location = new System.Drawing.Point(580, 181);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(186, 31);
+            this.label4.TabIndex = 82;
+            this.label4.Text = "制御周期";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1735, 993);
+            this.Controls.Add(this.button4);
+            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.button3);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.IgainDownButton);
+            this.Controls.Add(this.IgainUpButton);
+            this.Controls.Add(this.DgainDownButon);
+            this.Controls.Add(this.DgainUpButton);
+            this.Controls.Add(this.PgainDownButton);
+            this.Controls.Add(this.PgainUpButton);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.SaveSpanDown);
             this.Controls.Add(this.SaveSpanUp);
             this.Controls.Add(this.SaveSpanBox);
@@ -883,7 +1062,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.SecondVABox);
             this.Controls.Add(this.SecondVA);
-            this.Controls.Add(this.SettingConditionBox);
+            this.Controls.Add(this.T0Box);
             this.Controls.Add(this.PresetVSet);
             this.Controls.Add(this.PresetViDown);
             this.Controls.Add(this.PresetViup);
@@ -914,7 +1093,7 @@
             this.Controls.Add(this.SourceABox);
             this.Controls.Add(this.SourceVBox);
             this.Controls.Add(this.KelvinBox);
-            this.Controls.Add(this.PresetTBox);
+            this.Controls.Add(this.TargetTBox);
             this.Controls.Add(this.TemperatureBox);
             this.Controls.Add(this.HeatVBox);
             this.Controls.Add(this.UpperEPower);
@@ -924,7 +1103,7 @@
             this.Controls.Add(this.PresetTemperature);
             this.Controls.Add(this.ElectroMotiveForce);
             this.Controls.Add(this.SourceEPower);
-            this.Controls.Add(this.Temperature);
+            this.Controls.Add(this.TemperatureLabel);
             this.Controls.Add(this.ApparentRegistance);
             this.Controls.Add(this.SourceVoltage);
             this.Controls.Add(this.SourceCurrent);
@@ -975,7 +1154,7 @@
         private System.Windows.Forms.Label SourceCurrent;
         private System.Windows.Forms.Label SourceVoltage;
         private System.Windows.Forms.Label ApparentRegistance;
-        private System.Windows.Forms.Label Temperature;
+        private System.Windows.Forms.Label TemperatureLabel;
         private System.Windows.Forms.Label SourceEPower;
         private System.Windows.Forms.Label ElectroMotiveForce;
         private System.Windows.Forms.Label PresetTemperature;
@@ -985,7 +1164,7 @@
         private System.Windows.Forms.Label UpperEPower;
         private System.Windows.Forms.TextBox HeatVBox;
         private System.Windows.Forms.TextBox TemperatureBox;
-        private System.Windows.Forms.TextBox PresetTBox;
+        private System.Windows.Forms.TextBox TargetTBox;
         private System.Windows.Forms.TextBox KelvinBox;
         private System.Windows.Forms.TextBox SourceVBox;
         private System.Windows.Forms.TextBox SourceABox;
@@ -1021,7 +1200,7 @@
         private System.Windows.Forms.Button PresetVSet;
         private System.Windows.Forms.Button PresetViDown;
         private System.Windows.Forms.Button PresetViup;
-        private System.Windows.Forms.TextBox SettingConditionBox;
+        private System.Windows.Forms.TextBox T0Box;
         private System.Windows.Forms.TextBox SecondVABox;
         private System.Windows.Forms.Label SecondVA;
         private System.Windows.Forms.TextBox PrimRBox;
@@ -1030,6 +1209,20 @@
         private System.Windows.Forms.Button SaveSpanDown;
         private System.Windows.Forms.Button SaveSpanUp;
         private System.Windows.Forms.TextBox SaveSpanBox;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button IgainDownButton;
+        private System.Windows.Forms.Button IgainUpButton;
+        private System.Windows.Forms.Button DgainDownButon;
+        private System.Windows.Forms.Button DgainUpButton;
+        private System.Windows.Forms.Button PgainDownButton;
+        private System.Windows.Forms.Button PgainUpButton;
+        private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label label4;
     }
 }
 

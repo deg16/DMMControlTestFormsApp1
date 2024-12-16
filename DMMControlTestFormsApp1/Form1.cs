@@ -50,10 +50,24 @@ namespace DMMControlTestFormsApp1
         private Stopwatch stopwatch;        //測定時間計測
 
         private float PresetV = 0;//PresetV(設定電圧)の現在の値
+        private double PressT = 22;//プレス内温度の初期設定
+        private double roomT;//室温の初期設定
+        private double deltaT = 0;//熱起電力の初期設定
 
+        //計測周期の初期設定
         private float SaveSpan = 1.0f;
-        private int SaveSpanCmd;
+        private int SaveSpanCmd = 2; //値決定しておかないと、ボタンおさん限りSaveSpanCmdが変な数値（限りなく0に近い数字）になってバカでかいデータになる？
 
+        //PID制御の初期設定
+        private int PGain = 20;
+        private int DGain = 5;
+        private int IGain = 1;
+        private double TargetT = 0;
+
+        private float e_pre = 0;//微分用の近似値の初期値
+        private float ie = 0;//積分用の近似値の初期値
+
+        //csv,chart用データリスト
         List<String> elapsedTimes = new List<String>();
         List<double> voltageValues = new List<double>();
         List<double> PrimVoltageValues = new List<double>();
@@ -64,6 +78,7 @@ namespace DMMControlTestFormsApp1
         List<double> PrimelEctricPowerValues = new List<double>();
         List<double> temperatureValues = new List<double>();
 
+        //Fitting用(Form2)で出力する係数
         private double[] p;         // 係数配列を保持するフィールド
 
         public Form1()
@@ -81,7 +96,7 @@ namespace DMMControlTestFormsApp1
             Aseries2 = new System.Windows.Forms.DataVisualization.Charting.Series("CurrentData");
             Rseries3 = new System.Windows.Forms.DataVisualization.Charting.Series("ResistanceData");
             Pseries4 = new System.Windows.Forms.DataVisualization.Charting.Series("ElectricPower");
-            Tseries5 = new System.Windows.Forms.DataVisualization.Charting.Series("Temperature");
+            Tseries5 = new System.Windows.Forms.DataVisualization.Charting.Series("PressT");
             Vseries1.ChartType = SeriesChartType.Line;
             Aseries2.ChartType = SeriesChartType.Line;
             Rseries3.ChartType = SeriesChartType.Line;// 折れ線として表示
@@ -105,7 +120,7 @@ namespace DMMControlTestFormsApp1
             chart2.ChartAreas[0].AxisY.Title = "Current(A)";
             chart3.ChartAreas[0].AxisY.Title = "Resistance(Ω)";
             chart4.ChartAreas[0].AxisY.Title = "ElectricPower(VA)";
-            chart5.ChartAreas[0].AxisY.Title = "Temperature(℃)";
+            chart5.ChartAreas[0].AxisY.Title = "PressT(℃)";
 
             // X軸の設定
             chart1.ChartAreas[0].AxisX.Minimum = 0;  // X軸の初期値
@@ -136,7 +151,7 @@ namespace DMMControlTestFormsApp1
             //MessageBox.Show("Button clicked");
             if (float.TryParse(PresetVBox.Text, out PresetV))
             {
-                PresetV += 0.1f; // テキストボックスの値を+0.5する
+                PresetV += 0.1f; // テキストボックスの値を+0.1する
                 PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
 
                 using (var rmSession4 = new ResourceManager())
@@ -181,7 +196,7 @@ namespace DMMControlTestFormsApp1
             //MessageBox.Show("Button clicked");
             if (float.TryParse(PresetVBox.Text, out PresetV))
             {
-                PresetV -= 0.1f; // テキストボックスの値を-0.5する
+                PresetV -= 0.1f; // テキストボックスの値を-0.1する
                 PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
 
                 using (var rmSession4 = new ResourceManager())
@@ -280,31 +295,31 @@ namespace DMMControlTestFormsApp1
             form2.Show();
         }
 
-        public void ReceivePolynomial(double[] p)   // 受け取った係数配列をフィールドに代入
+        public void ReceivePolynomial(double[] p)   // Form2から受け取った係数配列をフィールドに代入
         {
             this.p = p;
             FunctionTextBox.Text = ToTeXPolynomial(p);      //textに出力
         }
-        private string ToTeXPolynomial(double[] coefficients) //テキストボックスに関数を表示させるもの　ｐの係数がcoefficients
+        private string ToTeXPolynomial(double[] coefficients) //テキストボックスにW-T関数を表示させるもの　ｐの係数がcoefficients
         {
-            string polynomialTeX = "y(x) = ";
+            string polynomialTeX = "T(℃) = ";
 
             for (int i = coefficients.Length - 1; i >= 0; i--)
             {
                 if (i == coefficients.Length - 1)
                 {
                     // 最高次の項
-                    polynomialTeX += $"{coefficients[i]}x^{i}";
+                    polynomialTeX += $"{coefficients[i]}W^{i}";
                 }
                 else
                 {
                     if (coefficients[i] >= 0)
                     {
-                        polynomialTeX += $" + {coefficients[i]}x^{i}";
+                        polynomialTeX += $" + {coefficients[i]}W^{i}";
                     }
                     else
                     {
-                        polynomialTeX += $" - {Math.Abs(coefficients[i])}x^{i}";
+                        polynomialTeX += $" - {Math.Abs(coefficients[i])}W^{i}";
                     }
                 }
             }
@@ -321,8 +336,12 @@ namespace DMMControlTestFormsApp1
             timer1.Start();     //timer作動
             stopwatch.Stop();
 
-            //SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+            double roomT = 27;
+            T0Box.Text = roomT.ToString();
 
+            int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
+            SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+            GetDataT(deltaT);//温度の初期状態を設定
         }
         private void HeaterControl()
         {
@@ -340,7 +359,7 @@ namespace DMMControlTestFormsApp1
                 mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
                 mbSession4.RawIO.Write("TM1,TM2");     //状態のWrite
                 Thread.Sleep(TimeSpan.FromSeconds(0.1));  //WriteとReadでのスパンを決めないとRead出来ない
-                SettingConditionBox.Text = mbSession4.RawIO.ReadString();
+                T0Box.Text = mbSession4.RawIO.ReadString();
                 mbSession4.Dispose();
             }
         }
@@ -349,8 +368,8 @@ namespace DMMControlTestFormsApp1
                 try
                 {
                     var (SecondVoltValue, SecondCurrValue,SecondElectricPower, HeatVoltValue, PrimV, PrimA, PrimR, PrimVA) = GetDataFromInstruments();  //機器との通信
-                    var (ElectricPowerValue, SecondResistanceValue, Temperature) = PerformCalculations(SecondVoltValue, SecondCurrValue, HeatVoltValue);    //電力抵抗温度の出力
-                    UpdateUI(SecondVoltValue, SecondCurrValue, HeatVoltValue, SecondElectricPower, SecondResistanceValue, Temperature, PrimV, PrimA, PrimR, PrimVA);       //Chartへの出力シーケンス
+                    var (ElectricPowerValue, SecondResistanceValue, PressT, deltaT, mVHeatVoltValue) = PerformCalculations(SecondVoltValue, SecondCurrValue, HeatVoltValue);    //電力抵抗温度の出力
+                    UpdateUI(SecondVoltValue, SecondCurrValue, HeatVoltValue, SecondElectricPower, SecondResistanceValue, deltaT, PrimV, PrimA, PrimR, PrimVA);       //Chartへの出力シーケンス
                 }
                 catch (Exception ex)
                 {
@@ -380,7 +399,7 @@ namespace DMMControlTestFormsApp1
                 //DMM Advantest社　コード　R6450　R64410A×２
                 mbSession1.RawIO.Write("F2");         //二次の電圧 
                 mbSession2.RawIO.Write("F2");        //二次の電流用電圧　V＝0.2/50A
-                mbSession3.RawIO.Write("F2");        //熱電対起電力
+                mbSession3.RawIO.Write("F1");        //熱電対起電力 起電力なので直流
                 mbSession4.RawIO.Write("TM0");        //1次の電源電圧のステータスを直接電源シミュレータに聞く
                 //Thread.Sleep(TimeSpan.FromSeconds(0.1));  //WriteとReadでのスパンを決めないとRead出来ない→今の機器（ADVANTESTやったらスパンなくてもよさそう）
 
@@ -408,6 +427,210 @@ namespace DMMControlTestFormsApp1
                 return (SecondVoltValue, SecondCurrValue, SecondElectricPower, HeatVoltValue, PrimV, PrimA, PrimR, PrimVA);
             }
         }
+        private (double ElectricPowerValue, double SecondResistanceValue, double PressT, double deltaT, double mVHeatVoltValue) PerformCalculations(double SecondVoltValue, double SecondCurrValue, double HeatVoltValue)   //2次のデータ処理
+        {
+            double ElectricPowerValue = SecondVoltValue * SecondCurrValue;
+            double SecondResistanceValue = SecondVoltValue / SecondCurrValue;
+            double mVHeatVoltValue = 0;  //HeatVoltValue[V] を計算式の単位に揃える
+
+            switch (useModeSelect)   //Power制御　or 熱電対（タブで分岐）
+            {
+                case 1:
+                    PressT = Polynomial.Evaluate(ElectricPowerValue, p);
+                    break;
+
+                case 2:  //熱電対typeK
+                    mVHeatVoltValue = HeatVoltValue * 1000000;
+                    if (mVHeatVoltValue < 0)
+                    {
+                        deltaT = 0;
+                    }
+                    else if (mVHeatVoltValue >= 0 && mVHeatVoltValue <= 20664 * Math.Pow(10, -6))  //0~20644μV　０℃の下限は設定してないから設定する必要があるかも
+                    {
+                        deltaT = (2.508355 * Math.Pow(10, -2) * mVHeatVoltValue) +
+                                      (7.860106 * Math.Pow(10, -8) * Math.Pow(mVHeatVoltValue, 2)) +
+                                      (-2.503131 * Math.Pow(10, -10) * Math.Pow(mVHeatVoltValue, 3)) +
+                                      (8.315270 * Math.Pow(10, -14) * Math.Pow(mVHeatVoltValue, 4)) +
+                                      (-1.228034 * Math.Pow(10, -17) * Math.Pow(mVHeatVoltValue, 5)) +
+                                      (9.804036 * Math.Pow(10, -22) * Math.Pow(mVHeatVoltValue, 6)) +
+                                      (-4.413030 * Math.Pow(10, -26) * Math.Pow(mVHeatVoltValue, 7)) +
+                                      (1.057734 * Math.Pow(10, -30) * Math.Pow(mVHeatVoltValue, 8)) +
+                                      (-1.052755 * Math.Pow(10, -35) * Math.Pow(mVHeatVoltValue, 9));          //(基準関数による）
+                    }
+                    else　　//上限設定なし
+                    {
+                        deltaT = -1.318058 * Math.Pow(10, 2) +
+                                      (4.830222 * Math.Pow(10, -2) * mVHeatVoltValue) +
+                                      (-1.646031 * Math.Pow(10, -6) * Math.Pow(mVHeatVoltValue, 2)) +
+                                      (5.464731 * Math.Pow(10, -11) * Math.Pow(mVHeatVoltValue, 3)) +
+                                      (-9.650715 * Math.Pow(10, -16) * Math.Pow(mVHeatVoltValue, 4)) +
+                                      (8.802193 * Math.Pow(10, -21) * Math.Pow(mVHeatVoltValue, 5)) +
+                                      (-3.110810 * Math.Pow(10, -26) * Math.Pow(mVHeatVoltValue, 6));
+                    }
+                    PressT = roomT + deltaT;
+                    break;
+
+                case 3:     //熱電対typeB　 
+                    mVHeatVoltValue = HeatVoltValue * 1000000;
+                    if (mVHeatVoltValue <= 291 * Math.Pow(10, -6))    //291μV～2431μV
+                    {
+                        deltaT = 0;
+                    }
+                    else if (mVHeatVoltValue >= 291 * Math.Pow(10, -6) && mVHeatVoltValue <= 2431 * Math.Pow(10, -6))    //2431μV～13820μV
+                    {
+                        deltaT = 98.42332 +
+                                    (0.6997150 * mVHeatVoltValue) +
+                                    (-8.4765304 * Math.Pow(10, -4) * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (1.0052644 * Math.Pow(10, -6) * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-8.3345952 * Math.Pow(10, -10) * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (4.5508542 * Math.Pow(10, -13) * Math.Pow(mVHeatVoltValue, 5)) +
+                                    (-1.5523037 * Math.Pow(10, -16) * Math.Pow(mVHeatVoltValue, 6)) +
+                                    (2.9886750 * Math.Pow(10, -20) * Math.Pow(mVHeatVoltValue, 7)) +
+                                    (-2.4742860 * Math.Pow(10, -24) * Math.Pow(mVHeatVoltValue, 8));
+                    }
+                    else
+                    {
+                        deltaT = 213.1507 +
+                                    (0.2851504 * mVHeatVoltValue) +
+                                    (-5.2742887 * Math.Pow(10, -5) * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (9.9160804 * Math.Pow(10, -9) * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-1.2965303 * Math.Pow(10, -12) * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (1.1195870 * Math.Pow(10, -16) * Math.Pow(mVHeatVoltValue, 5)) +
+                                    (-6.0625199 * Math.Pow(10, -21) * Math.Pow(mVHeatVoltValue, 6)) +
+                                    (1.8661696 * Math.Pow(10, -25) * Math.Pow(mVHeatVoltValue, 7)) +
+                                    (-2.4878585 * Math.Pow(10, -30) * Math.Pow(mVHeatVoltValue, 8));
+                    }
+                    PressT = roomT + deltaT;
+                    break;
+
+                case 4:     //typeD y = 0.0015x5 - 0.0615x4 + 1.0395x3 - 9.1571x2 + 94.021x + 2.1901    (x=[mV], y=[℃])
+                    mVHeatVoltValue = HeatVoltValue * 1000;
+                    if (mVHeatVoltValue < 0)
+                    {
+                        deltaT = 0;
+                    }
+                    else if (mVHeatVoltValue >= 0 && mVHeatVoltValue < 13.8019609) //0~13.8019609 [mV]
+                    {
+                        deltaT = (2.1901) +
+                                    (94.021 * mVHeatVoltValue) +
+                                    (-9.1571 * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (1.0395 * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-0.00615 * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (0.0015 * Math.Pow(mVHeatVoltValue, 5));
+                    }
+                    else    //y = 0.0001x5 - 0.0152x4 + 0.7319x3 - 17.132x2 + 243.09x - 748.01
+                    {
+                        deltaT = (-748.01) +
+                                    (243.09 * mVHeatVoltValue) +
+                                    (-17.132 * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (0.7319 * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-0.0152 * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (0.0001 * Math.Pow(mVHeatVoltValue, 5));
+                    }
+                    PressT = roomT + deltaT;
+                    break;
+
+                case 5:     //typeR  電圧範囲の単位(μⅤ) 分解能？
+                    mVHeatVoltValue = HeatVoltValue * 1000000;
+                    if (mVHeatVoltValue < 0)
+                    {
+                        deltaT = 0;
+                    }
+                    else if (mVHeatVoltValue >= 0 && mVHeatVoltValue <= 1874 * Math.Pow(10, -6))
+                    {
+                        deltaT = (1.849 * Math.Pow(10, -1) * mVHeatVoltValue) +
+                                    (-8.005 * Math.Pow(10, -5) * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (1.022 * Math.Pow(10, -7) * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-1.522 * Math.Pow(10, -10) * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (1.888 * Math.Pow(10, -13) * Math.Pow(mVHeatVoltValue, 5)) +
+                                    (-1.591 * Math.Pow(10, -16) * Math.Pow(mVHeatVoltValue, 6)) +
+                                    (8.230 * Math.Pow(10, -20) * Math.Pow(mVHeatVoltValue, 7)) +
+                                    (-2.342 * Math.Pow(10, -23) * Math.Pow(mVHeatVoltValue, 8)) *
+                                    (2.798 * Math.Pow(10, -27) * Math.Pow(mVHeatVoltValue, 9));
+                    }
+                    else if (mVHeatVoltValue > 1874 * Math.Pow(10, -6) && mVHeatVoltValue <= 10332 * Math.Pow(10, -6))
+                    {
+                        deltaT = 12.92 +
+                                    (1.466 * Math.Pow(10, -1) * mVHeatVoltValue) +
+                                    (-1.535 * Math.Pow(10, -5) * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (3.146 * Math.Pow(10, -9) * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-4.163 * Math.Pow(10, -13) * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (3.188 * Math.Pow(10, -17) * Math.Pow(mVHeatVoltValue, 5)) +
+                                    (-1.292 * Math.Pow(10, -21) * Math.Pow(mVHeatVoltValue, 6)) +
+                                    (2.183 * Math.Pow(10, -26) * Math.Pow(mVHeatVoltValue, 7)) +
+                                    (-1.447 * Math.Pow(10, -31) * Math.Pow(mVHeatVoltValue, 8)) +
+                                    (8.211 * Math.Pow(10, -36) * Math.Pow(mVHeatVoltValue, 9));
+                    }
+                    else if (mVHeatVoltValue > 10332 * Math.Pow(10, -6) && mVHeatVoltValue <= 17536 * Math.Pow(10, -6))
+                    {
+                        deltaT = -80.88 +
+                                    (1.622 * Math.Pow(10, -1) * mVHeatVoltValue) +
+                                    (-8.537 * Math.Pow(10, -6) * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (4.720 * Math.Pow(10, -10) * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (-1.442 * Math.Pow(10, -14) * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (2.082 * Math.Pow(10, -19) * Math.Pow(mVHeatVoltValue, 5));
+                    }
+                    else
+                    {
+                        deltaT = (5.334 * Math.Pow(10, 4)) +
+                                    (-1.236 * Math.Pow(10, 1) * mVHeatVoltValue) +
+                                    (1.093 * Math.Pow(10, -3) * Math.Pow(mVHeatVoltValue, 2)) +
+                                    (-4.266 * Math.Pow(10, -8) * Math.Pow(mVHeatVoltValue, 3)) +
+                                    (6.247 * Math.Pow(10, -13) * Math.Pow(mVHeatVoltValue, 4));
+                    }
+                    PressT = roomT + deltaT;
+                    break;
+                default:
+                    // デフォルトの処理（必要に応じて）
+                    PressT = 20; // 例として、デフォルトでは温度を 0 に設定
+                    break;
+            }
+            return (ElectricPowerValue, SecondResistanceValue, PressT, deltaT, mVHeatVoltValue);
+        }
+        private void UpdateUI(double SecondVoltValue, double SecondCurrValue, double HeatVoltValue, double SecondElectricPower, double SecondResistanceValue, double deltaT, double PrimV, double PrimA, double PrimR, double PrimVA)
+        {
+            double Kelvin = PressT + 273;
+            double mVHeatVoltValue = HeatVoltValue * 1000;
+            //TextBoxに出力
+            HeatVBox.Text = mVHeatVoltValue.ToString("F3");//熱起電力（mV？)単位を実際に測って検証しないといけないかも
+            TemperatureBox.Text = PressT.ToString("F3");//プレス内温度
+            KelvinBox.Text = Kelvin.ToString("F3");//絶対温度
+            SourceVBox.Text = PrimV.ToString("F3");  //１次電圧
+            SourceABox.Text = PrimA.ToString("F3");//１次電流
+            PrimRBox.Text = Math.Round(PrimR, 4, MidpointRounding.AwayFromZero).ToString();//１次抵抗[小数点以下４桁まで四捨五入]
+            SourceEPBox.Text = PrimVA.ToString("F3");   //1次電力
+            SecondVBox.Text = SecondVoltValue.ToString("F3");   //2次電圧
+            SecondABox.Text = SecondCurrValue.ToString("F3");   //2次電流
+            SecondRBox.Text = SecondResistanceValue.ToString("F3");     //2次抵抗
+            SecondVABox.Text = Math.Round(SecondElectricPower, 4, MidpointRounding.AwayFromZero).ToString();  //2次電力、小数点以下４桁まで丸める
+
+            Vseries1.BorderWidth = 3;
+            Aseries2.BorderWidth = 3;
+            Rseries3.BorderWidth = 3;
+            Pseries4.BorderWidth = 3;
+            Tseries5.BorderWidth = 3;
+            //Chartに出力
+            Vseries1.Points.AddY(SecondVoltValue);
+            Aseries2.Points.AddY(SecondCurrValue);
+            Rseries3.Points.AddY(SecondResistanceValue);
+            Pseries4.Points.AddY(SecondElectricPower);
+            Tseries5.Points.AddY(PressT);
+            //Listに入れる（CSV用）
+            voltageValues.Add(SecondVoltValue);
+            currentValues.Add(SecondCurrValue);
+            resistanceValues.Add(SecondResistanceValue);
+            electricPowerValues.Add(SecondElectricPower);
+            temperatureValues.Add(PressT);
+            PrimVoltageValues.Add(PrimV);
+            PrimCurrentValues.Add(PrimA);
+            PrimelEctricPowerValues.Add(PrimVA);
+            //Chartの更新
+            UpdateChart(Vseries1, chart1, SecondVoltValue);
+            UpdateChart(Aseries2, chart2, SecondCurrValue);
+            UpdateChart(Rseries3, chart3, SecondResistanceValue);
+            UpdateChart(Pseries4, chart4, SecondElectricPower);
+            UpdateChart(Tseries5, chart5, PressT);
+        }
         private double ExtractValue(string SourceData, char identifier)     //電源から直接電圧電流を測定した時の文字列から数値データとして取り出す
         {
             string pattern = @"([-+]?\d+(\.\d+)?)\s*" + identifier;     //電源シミュレータごとの出力文字列に合わせてコーディング
@@ -422,191 +645,22 @@ namespace DMMControlTestFormsApp1
                 throw new ArgumentException($"入力文字列に有効な {identifier} 値が見つかりません。");
             }
         }
-
-
-        private void UpdateUI(double SecondVoltValue, double SecondCurrValue, double HeatVoltValue, double SecondElectricPower, double SecondResistanceValue, double Temperature, double PrimV, double PrimA, double PrimR, double PrimVA)
+        private void GetDataT(double deltaT)//温度入力値読み込み
         {
-            double Kelvin = Temperature + 273;
-            //TextBoxに出力
-            HeatVBox.Text = HeatVoltValue.ToString("F3");
-            TemperatureBox.Text = Temperature.ToString("F3");
-            KelvinBox.Text = Kelvin.ToString("F3");
-            SourceVBox.Text = PrimV.ToString("F3");  
-            SourceABox.Text = PrimA.ToString("F3");
-            PrimRBox.Text = Math.Round(PrimR,4,MidpointRounding.AwayFromZero).ToString();
-            SourceEPBox.Text = PrimVA.ToString("F3");   //1次電力
-            SecondVBox.Text = SecondVoltValue.ToString("F3");   //2次電圧
-            SecondABox.Text = SecondCurrValue.ToString("F3");   //2次電流
-            SecondRBox.Text = SecondResistanceValue.ToString("F3");     //2次抵抗
-            SecondVABox.Text = Math.Round(SecondElectricPower,4,MidpointRounding.AwayFromZero).ToString();  //2次電力、小数点以下４桁まで丸める
-
-            Vseries1.BorderWidth = 3;
-            Aseries2.BorderWidth = 3;
-            Rseries3.BorderWidth = 3;
-            Pseries4.BorderWidth = 3;
-            Tseries5.BorderWidth = 3;
-            //Chartに出力
-            Vseries1.Points.AddY(SecondVoltValue);
-            Aseries2.Points.AddY(SecondCurrValue);
-            Rseries3.Points.AddY(SecondResistanceValue);
-            Pseries4.Points.AddY(SecondElectricPower);
-            Tseries5.Points.AddY(Temperature);
-            //Listに入れる（CSV用）
-            voltageValues.Add(SecondVoltValue);
-            currentValues.Add(SecondCurrValue);
-            resistanceValues.Add(SecondResistanceValue);
-            electricPowerValues.Add(SecondElectricPower);
-            temperatureValues.Add(Temperature);
-            PrimVoltageValues.Add(PrimV);
-            PrimCurrentValues.Add(PrimA);
-            PrimelEctricPowerValues.Add(PrimVA);
-            //Chartの更新
-            UpdateChart(Vseries1,chart1, SecondVoltValue);
-            UpdateChart(Aseries2,chart2, SecondCurrValue);
-            UpdateChart(Rseries3,chart3, SecondResistanceValue);
-            UpdateChart(Pseries4,chart4, SecondElectricPower);
-            UpdateChart(Tseries5,chart5, Temperature);
-        }
-        private (double ElectricPowerValue, double SecondResistanceValue, double Temperature) PerformCalculations(double SecondVoltValue, double SecondCurrValue, double HeatVoltValue)   //2次のデータ処理
-        {
-            double ElectricPowerValue = SecondVoltValue * SecondCurrValue;
-            double SecondResistanceValue = SecondVoltValue / SecondCurrValue;
-            double Temperature;
-
-            switch (useModeSelect)   //Power制御　or 熱電対（タブで分岐）
+            //roomT読み込み,Tに変換
+            if (double.TryParse(T0Box.Text, out roomT))
             {
-                case 1:
-                    Temperature = Polynomial.Evaluate(ElectricPowerValue, p);
-                    break;
-
-                case 2:  //熱電対typeK
-                    if (HeatVoltValue <= 20664 * Math.Pow(10, -6))  //0~500℃　０℃の下限は設定してないから設定する必要があるかも
-                    {
-                        Temperature = (2.508355 * Math.Pow(10, -2) * HeatVoltValue) +
-                                      (7.860106 * Math.Pow(10, -8) * Math.Pow(HeatVoltValue, 2)) +
-                                      (-2.503131 * Math.Pow(10, -10) * Math.Pow(HeatVoltValue, 3)) +
-                                      (8.315270 * Math.Pow(10, -14) * Math.Pow(HeatVoltValue, 4)) +
-                                      (-1.228034 * Math.Pow(10, -17) * Math.Pow(HeatVoltValue, 5)) +
-                                      (9.804036 * Math.Pow(10, -22) * Math.Pow(HeatVoltValue, 6)) +
-                                      (-4.413030 * Math.Pow(10, -26) * Math.Pow(HeatVoltValue, 7)) +
-                                      (1.057734 * Math.Pow(10, -30) * Math.Pow(HeatVoltValue, 8)) +
-                                      (-1.052755 * Math.Pow(10, -35) * Math.Pow(HeatVoltValue, 9));          //(基準関数による）
-                    }
-                    else　　//上限設定なし
-                    {
-                        Temperature = -1.318058 * Math.Pow(10, 2) +
-                                      (4.830222 * Math.Pow(10, -2) * HeatVoltValue) +
-                                      (-1.646031 * Math.Pow(10, -6) * Math.Pow(HeatVoltValue, 2)) +
-                                      (5.464731 * Math.Pow(10, -11) * Math.Pow(HeatVoltValue, 3)) +
-                                      (-9.650715 * Math.Pow(10, -16) * Math.Pow(HeatVoltValue, 4)) +
-                                      (8.802193 * Math.Pow(10, -21) * Math.Pow(HeatVoltValue, 5)) +
-                                      (-3.110810 * Math.Pow(10, -26) * Math.Pow(HeatVoltValue, 6));
-                    }
-                    break;
-
-                case 3:     //熱電対typeB
-                    if (HeatVoltValue <= 291 * Math.Pow(10, -6))
-                    {
-                        Temperature = 0;
-                    }
-                    if (HeatVoltValue >= 291 * Math.Pow(10, -6) && HeatVoltValue <= 2431 * Math.Pow(10, -6))
-                    {
-                        Temperature = 98.42332 +
-                                    (0.6997150 * HeatVoltValue) +
-                                    (-8.4765304 * Math.Pow(10, -4) * Math.Pow(HeatVoltValue, 2)) +
-                                    (1.0052644 * Math.Pow(10, -6) * Math.Pow(HeatVoltValue, 3)) +
-                                    (-8.3345952 * Math.Pow(10, -10) * Math.Pow(HeatVoltValue, 4)) +
-                                    (4.5508542 * Math.Pow(10, -13) * Math.Pow(HeatVoltValue, 5)) +
-                                    (-1.5523037 * Math.Pow(10, -16) * Math.Pow(HeatVoltValue, 6)) +
-                                    (2.9886750 * Math.Pow(10, -20) * Math.Pow(HeatVoltValue, 7)) +
-                                    (-2.4742860 * Math.Pow(10, -24) * Math.Pow(HeatVoltValue, 8));
-                    }
-                    else
-                    {
-                        Temperature = 213.1507 +
-                                    (0.2851504 * HeatVoltValue) +
-                                    (-5.2742887 * Math.Pow(10, -5) * Math.Pow(HeatVoltValue, 2)) +
-                                    (9.9160804 * Math.Pow(10, -9) * Math.Pow(HeatVoltValue, 3)) +
-                                    (-1.2965303 * Math.Pow(10, -12) * Math.Pow(HeatVoltValue, 4)) +
-                                    (1.1195870 * Math.Pow(10, -16) * Math.Pow(HeatVoltValue, 5)) +
-                                    (-6.0625199 * Math.Pow(10, -21) * Math.Pow(HeatVoltValue, 6)) +
-                                    (1.8661696 * Math.Pow(10, -25) * Math.Pow(HeatVoltValue, 7)) +
-                                    (-2.4878585 * Math.Pow(10, -30) * Math.Pow(HeatVoltValue, 8));
-                    }
-                    break;
-
-                case 4:     //typeD
-                    if (HeatVoltValue < 13.8019609)
-                    {
-                        Temperature = (2 * Math.Pow(10, -10)) +
-                                    (0.0096 * HeatVoltValue) +
-                                    (2 * Math.Pow(10, -5) * Math.Pow(HeatVoltValue, 2)) +
-                                    (-2 * Math.Pow(10, -8) * Math.Pow(HeatVoltValue, 3)) +
-                                    (8 * Math.Pow(10, -12) * Math.Pow(HeatVoltValue, 4)) +
-                                    (-1 * Math.Pow(10, -15) * Math.Pow(HeatVoltValue, 5));
-                    }
-                    else
-                    {
-                        Temperature = (6 * Math.Pow(10, -9)) +
-                                    (0.0099 * HeatVoltValue) +
-                                    (2 * Math.Pow(10, -5) * Math.Pow(HeatVoltValue, 2)) +
-                                    (-1 * Math.Pow(10, -8) * Math.Pow(HeatVoltValue, 3)) +
-                                    (5 * Math.Pow(10, -12) * Math.Pow(HeatVoltValue, 4)) +
-                                    (-8 * Math.Pow(10, -16) * Math.Pow(HeatVoltValue, 5));
-                    }
-                    break;
-
-                case 5:     //typeR
-                    if (HeatVoltValue <= 1874 * Math.Pow(10, -6))
-                    {
-                        Temperature = (1.849 * Math.Pow(10, -1) * HeatVoltValue) +
-                                    (-8.005 * Math.Pow(10, -5) * Math.Pow(HeatVoltValue, 2)) +
-                                    (1.022 * Math.Pow(10, -7) * Math.Pow(HeatVoltValue, 3)) +
-                                    (-1.522 * Math.Pow(10, -10) * Math.Pow(HeatVoltValue, 4)) +
-                                    (1.888 * Math.Pow(10, -13) * Math.Pow(HeatVoltValue, 5)) +
-                                    (-1.591 * Math.Pow(10, -16) * Math.Pow(HeatVoltValue, 6)) +
-                                    (8.230 * Math.Pow(10, -20) * Math.Pow(HeatVoltValue, 7)) +
-                                    (-2.342 * Math.Pow(10, -23) * Math.Pow(HeatVoltValue, 8)) *
-                                    (2.798 * Math.Pow(10, -27) * Math.Pow(HeatVoltValue, 9));
-                    }
-                    if (HeatVoltValue > 1874 * Math.Pow(10, -6) && HeatVoltValue <= 10332 * Math.Pow(10, -6))
-                    {
-                        Temperature = 12.92 +
-                                    (1.466 * Math.Pow(10, -1) * HeatVoltValue) +
-                                    (-1.535 * Math.Pow(10, -5) * Math.Pow(HeatVoltValue, 2)) +
-                                    (3.146 * Math.Pow(10, -9) * Math.Pow(HeatVoltValue, 3)) +
-                                    (-4.163 * Math.Pow(10, -13) * Math.Pow(HeatVoltValue, 4)) +
-                                    (3.188 * Math.Pow(10, -17) * Math.Pow(HeatVoltValue, 5)) +
-                                    (-1.292 * Math.Pow(10, -21) * Math.Pow(HeatVoltValue, 6)) +
-                                    (2.183 * Math.Pow(10, -26) * Math.Pow(HeatVoltValue, 7)) +
-                                    (-1.447 * Math.Pow(10, -31) * Math.Pow(HeatVoltValue, 8)) +
-                                    (8.211 * Math.Pow(10, -36) * Math.Pow(HeatVoltValue, 9));
-                    }
-                    if (HeatVoltValue > 10332 * Math.Pow(10, -6) && HeatVoltValue <= 17536 * Math.Pow(10, -6))
-                    {
-                        Temperature = -80.88 +
-                                    (1.622 * Math.Pow(10, -1) * HeatVoltValue) +
-                                    (-8.537 * Math.Pow(10, -6) * Math.Pow(HeatVoltValue, 2)) +
-                                    (4.720 * Math.Pow(10, -10) * Math.Pow(HeatVoltValue, 3)) +
-                                    (-1.442 * Math.Pow(10, -14) * Math.Pow(HeatVoltValue, 4)) +
-                                    (2.082 * Math.Pow(10, -19) * Math.Pow(HeatVoltValue, 5));
-                    }
-                    else
-                    {
-                        Temperature = (5.334 * Math.Pow(10, 4)) +
-                                    (-1.236 * Math.Pow(10, 1) * HeatVoltValue) +
-                                    (1.093 * Math.Pow(10, -3) * Math.Pow(HeatVoltValue, 2)) +
-                                    (-4.266 * Math.Pow(10, -8) * Math.Pow(HeatVoltValue, 3)) +
-                                    (6.247 * Math.Pow(10, -13) * Math.Pow(HeatVoltValue, 4));
-                    }
-                    break;
-                default:
-                    // デフォルトの処理（必要に応じて）
-                    Temperature = 20; // 例として、デフォルトでは温度を 0 に設定
-                    break;
+                PressT = roomT + deltaT;
+                TemperatureBox.Text = PressT.ToString();
             }
-            return (ElectricPowerValue, SecondResistanceValue, Temperature);
+            else
+            {
+                // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
         }
+
         private void HandleError(Exception ex)　//エラー処理
         {
             timer1.Stop();
@@ -710,7 +764,7 @@ namespace DMMControlTestFormsApp1
             }
         }
 
-        private void OnButton_Click(object sender, EventArgs e)
+        private void OnButton_Click(object sender, EventArgs e)//出力ＯＮ
         {
             using (var rmSession4 = new ResourceManager())   //変数の宣言
                 switch (useModeSelect)
@@ -739,7 +793,7 @@ namespace DMMControlTestFormsApp1
             ResetAndResumeMeasurement();        //データのリセット処理
         }
 
-        private void OffButton_Click(object sender, EventArgs e)
+        private void OffButton_Click(object sender, EventArgs e)//出力ＯＦＦ
         {
             using (var rmSession4 = new ResourceManager())   //変数の宣言
                 mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
@@ -748,8 +802,8 @@ namespace DMMControlTestFormsApp1
             mbSession4.Dispose();
             isOutput = false;       //出力のフラグ
             var (SecondVoltValue, SecondCurrValue, SecondElectricPower, HeatVoltValue, PrimV, PrimA, PrimR, PrimVA) = GetDataFromInstruments();  //機器との通信
-            var (ElectricPowerValue, SecondResistanceValue, Temperature) = PerformCalculations(SecondVoltValue, SecondCurrValue, HeatVoltValue);    //電力抵抗温度の出力
-            UpdateUI(SecondVoltValue, SecondCurrValue, HeatVoltValue, ElectricPowerValue, SecondResistanceValue, Temperature, PrimV, PrimA, PrimR, PrimVA);       //Chartへの出力シーケンス
+            var (ElectricPowerValue, SecondResistanceValue, PressT, deltaT, mVHeatVoltValue) = PerformCalculations(SecondVoltValue, SecondCurrValue, HeatVoltValue);    //電力抵抗温度の出力
+            UpdateUI(SecondVoltValue, SecondCurrValue, HeatVoltValue, ElectricPowerValue, SecondResistanceValue, deltaT, PrimV, PrimA, PrimR, PrimVA);       //Chartへの出力シーケンス
             OnButton.Text = "出力";
             OffButton.Text = "停止中";
             OnButton.Enabled = true;
@@ -770,8 +824,8 @@ namespace DMMControlTestFormsApp1
                 // 列の名前を出力
                 writer.WriteLine("測定時間,2次電圧(V),2次電流(A),2次抵抗(Ω),2次電力(VA),温度(℃),1次電圧(V),1次電流(A),1次電力(VA)");
                 //各列のデータ
-                for (int i = 0; i < voltageValues.Count;  i ++)
-                //for (int i = 0; i < voltageValues.Count;  i += SaveSpanCmd)
+                //for (int i = 0; i < voltageValues.Count;  i ++)
+                for (int i = 0; i < elapsedTimes.Count;  i += SaveSpanCmd)
                 {
                     writer.WriteLine($"{elapsedTimes[i]},{voltageValues[i]}, {currentValues[i]}, {resistanceValues[i]}, {electricPowerValues[i]}, {temperatureValues[i]}, {PrimVoltageValues[i]}, {PrimCurrentValues[i]}, {PrimelEctricPowerValues[i]}");
                 }
@@ -845,96 +899,163 @@ namespace DMMControlTestFormsApp1
             mbSession4.Dispose();
         }
 
-        //private void SaveSpanUp_Click(object sender, EventArgs e)
-        //{
-        //    if (float.TryParse(SaveSpanBox.Text, out SaveSpan))
-        //    {
-        //        SaveSpan *= 2f; // テキストボックスの値を*2する
-        //        SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+        private void SaveSpanUp_Click(object sender, EventArgs e)
+        {
+            if (float.TryParse(SaveSpanBox.Text, out SaveSpan))
+            {
+                SaveSpan *= 2.0f; // テキストボックスの値を*2する
+                SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
 
-        //        if (SaveSpan > 128f)
-        //        {
-        //            SaveSpan = 128f;
-        //            SaveSpanBox.Text = SaveSpan.ToString();
-        //            return;
-        //        }
+                if (SaveSpan > 128f)
+                {
+                    SaveSpan = 128f;
+                    SaveSpanBox.Text = SaveSpan.ToString();
+                    return;
+                }
 
-        //        int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
-        //    }
-        //    else
-        //    {
-        //        // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
-        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //    }
+                int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
+            }
+            else
+            {
+                // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
-        //}
+        private void SaveSpanDown_Click(object sender, EventArgs e)
+        {
+            if (float.TryParse(SaveSpanBox.Text, out SaveSpan))
+            {
+                SaveSpan /= 2.0f; // テキストボックスの値を÷2する
+                SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
 
-        //private void SaveSpanDown_Click(object sender, EventArgs e)
-        //{
-        //    if (float.TryParse(SaveSpanBox.Text, out SaveSpan))
-        //    {
-        //        SaveSpan /= 2f; // テキストボックスの値を÷10する
-        //        SaveSpanBox.Text = SaveSpan.ToString(); // 新しい値をテキストボックスに設定する
+                if (SaveSpan < 0.5f)
+                {
+                    SaveSpan = 0.5f;
+                    SaveSpanBox.Text = SaveSpan.ToString();
+                    return;
+                }
 
-        //        if (SaveSpan < 0.5f)
-        //        {
-        //            SaveSpan = 0.5f;
-        //            SaveSpanBox.Text = SaveSpan.ToString();
-        //            return;
-        //        }
+                int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
+            }
+            else
+            {
+                // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
-        //        int SaveSpanCmd = (int)(SaveSpan * 2);  //ms換算のため (Timer1の周期:0.5より)
-        //    }
-        //    else
-        //    {
-        //        // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
-        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //    }
+        }
 
-        //}
-
-        //private void PIDControl(object sender, EventArgs e)
+        //private void PIDControl(object sender, EventArgs e)//PID制御
         //{
         //    // 定数設定 ===============
-        //    KP = 20;  // Pゲイン
-        //    KD = 5;   // Dゲイン
-        //    KI = 1;   // Iゲイン
-        //    T  = 0.01;// 制御周期[秒]
-
-        //    // 変数初期化 ===============
-        //    e_pre = 0; // 微分の近似計算のための初期値
-        //    ie = 0;    // 積分の近似計算のための初期値
-
-        //    // メインループ ===============
-        //    while(1){
-        //      // 制御周期分だけ待つ処理
-        //      sleep(T);
-
-        //    // 現時刻における情報を取得
-        //    y = get_y(); // 出力を取得。例:センサー情報を読み取る処理
-        //    r = get_r(); // 目標値を取得。目標値が一定ならその値を代入する
-
-        //    // PID制御の式より、制御入力uを計算
-        //    e  = r - y;                // 誤差を計算
-        //    de = (e - e_pre)/T;        // 誤差の微分を近似計算
-        //    ie = ie + (e + e_pre)*T/2; // 誤差の積分を近似計算
-        //    u  = KP* e + KI* ie + KD* de; // PID制御の式にそれぞれを代入　u:操作量　 "VA" + u　これの変更
-        //    // 制御入力をシステムに与える処理
-        //    give_u(u); // 例:モーターに電流を流す処理
-        //    mbSession4.RawIO.Write(VTCommand);     //出力の変更　give_u(u):の部分
-
-        //    // 次のために現時刻の情報を記録
-        //    e_pre = e;
+        //    if (int.TryParse(PgainBox.Text,out PGain))
+        //    {
+        //      return PGain;
         //    }
-        //}
+        //    else
+        //    {
+        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //    if (int.TryParse(DgainBox.Text, out DGain))
+        //    {
+        //      return DGain;
+        //    }
+        //    else
+        //    {
+        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //    if (int.TryParse(IgainBox.Text,out IGain))
+        //    {
+        //      return IGain;
+        //    }
+        //    else
+        //    {
+        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //    //PGain = 20;  // Pゲイン
+        //    //DGain = 5;   // Dゲイン
+        //    //IGain = 1;   // Iゲイン
+        //    //T = 0.5;// 制御周期[秒] Timer2の周期で設定（1sごとに固定するかも）
+
+        //    // メインループ ===============　→これをTimer2で書く。
+        //    while (1)
+        //    {
+        //        // 制御周期分だけ待つ処理
+        //        sleep(T);
+
+        //        // 現時刻における情報を取得
+        //        PressT = roomT + deltaT; // 出力を取得。例:センサー情報を読み取る処理
+        //        if (double.TryParse(TargetTBox.Text, out TargetT)) //目標値を取得。目標値が一定ならその値を代入する
+        //        {
+        //        }
+        //        else
+        //        {
+        //            MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //        }
+        //        // PID制御の式より、制御入力uを計算
+        //        e = TargetT - PressT;                // 誤差を計算 floatで統一させるか？
+        //        de = (e - e_pre) / T;        // 誤差の微分を近似計算
+        //        ie = ie + (e + e_pre) * T / 2; // 誤差の積分を近似計算
+        //        u = PGain * e + IGain * ie + DGain * de; // PID制御の式にそれぞれを代入　u:操作量　 "VA" + u　これの変更
+        //                                                 // 制御入力をシステムに与える処理 最低温度上昇を計測（1次を0.1V上げると、どれだけ温度が上がるのか）[予想13℃/V]
+        //        //give_u(u); // 例:モーターに電流を流す処理
+        //        if (u > 0)
+        //        {
+        //            if (float.TryParse(PresetVBox.Text, out PresetV))
+        //            {
+        //                PresetV += 0.1f; // テキストボックスの値を+0.1する
+        //                PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
+
+        //                using (var rmSession4 = new ResourceManager())
+        //                {
+        //                    mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
+        //                    string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
+        //                    mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
+        //                    mbSession4.Dispose();
+        //                }
+        //                else
+        //                {
+        //                    // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+        //                    MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //                }       //        }
+        //            }
+        //        }
+        //        else (u < 0)
+        //        {
+        //            if (float.TryParse(PresetVBox.Text, out PresetV))
+        //            {
+        //                PresetV += 0.1f; // テキストボックスの値を+0.1する
+        //                PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
+
+        //                using (var rmSession4 = new ResourceManager())
+        //                {
+        //                    mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
+        //                    string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
+        //                    mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
+        //                    mbSession4.Dispose();
+        //                }
+        //                else
+        //                {
+        //                    // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+        //                    MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //                }       //        }
+        //            }
+        //        }
+        //        // 次のために現時刻の情報を記録
+        //        e_pre = e;
+        //        }
+        //    }
     }
 }
-//なぜかテキストボックス（周波数)をいじると、電圧出力がバグって反応しなくなる
 //やること
-//1次と2次の電圧電流比較
 //全体を通じての周波数の変化の影響調査
 //開発したアプリケーションをほかのPCでも起動できるのか。PATHなどもしくは.exeとして実装出来ないのか
 //Uiの改善
 //PID制御の導入　(目標温度を入力すると自動で、制御ができるもの）
 
 //timer1 測定周期　~0.5　
+
+
+//参考文献（熱電対）
+// 熱電対起電力の圧力効果：マルチアンビル装置と放射光を用いた実験的研究　西原 遊, 中田 輝, 松影 香子, 肥後 祐司, 丹下 慶範　 https://doi.org/10.4131/jshpreview.34.81

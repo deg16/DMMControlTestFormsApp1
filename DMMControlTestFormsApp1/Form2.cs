@@ -79,22 +79,22 @@ namespace DMMControlTestFormsApp1
                     {
                         lineNumber++;
 
-                        // 1行目を無視
-                        if (lineNumber == 1)
+                        // 1~3行目を無視
+                        if (lineNumber <= 3)
                         {
                             continue;
                         }
 
                         var columns = line.Split(',');
 
-                        // 4列目のデータをリストに追加
-                        if (columns.Length >= 4 && double.TryParse(columns[3], out double col4Value))
+                        // 5列目のデータをリストに追加
+                        if (columns.Length >= 5 && double.TryParse(columns[4], out double col4Value))
                         {
                             d_EP_List.Add(col4Value);
                         }
 
-                        // 5列目のデータをリストに追加
-                        if (columns.Length >= 5 && double.TryParse(columns[4], out double col5Value))
+                        // 6列目のデータをリストに追加
+                        if (columns.Length >= 6 && double.TryParse(columns[5], out double col5Value))
                         {
                             d_Temp_List.Add(col5Value);
                         }
@@ -148,24 +148,24 @@ namespace DMMControlTestFormsApp1
         }
         private string ToTeXPolynomial(double[] coefficients) //テキストボックスに関数を表示させるもの
         {
-            string polynomialTeX = "y(x) = ";
+            string polynomialTeX = "T(℃) = ";
 
             for (int i = coefficients.Length - 1; i >= 0; i--)
             {
                 if (i == coefficients.Length - 1)
                 {
                     // 最高次の項
-                    polynomialTeX += $"{coefficients[i]}x^{i}";
+                    polynomialTeX += $"{coefficients[i]}W^{i}";
                 }
                 else
                 {
                     if (coefficients[i] >= 0)
                     {
-                        polynomialTeX += $" + {coefficients[i]}x^{i}";
+                        polynomialTeX += $" + {coefficients[i]}W^{i}";
                     }
                     else
                     {
-                        polynomialTeX += $" - {Math.Abs(coefficients[i])}x^{i}";
+                        polynomialTeX += $" - {Math.Abs(coefficients[i])}W^{i}";
                     }
                 }
             }
@@ -195,6 +195,7 @@ namespace DMMControlTestFormsApp1
             // Form1 に yfit の式を送信
             Form1 form1 = Application.OpenForms["Form1"] as Form1;
             form1?.ReceivePolynomial(p);    //Form1に送る処理　ｐを送る
+            //this.Close();
         }
     }
 
