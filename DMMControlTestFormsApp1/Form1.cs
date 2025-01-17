@@ -44,6 +44,7 @@ namespace DMMControlTestFormsApp1
         private bool isOutput = false;        //出力のONOFFフラグ
         private bool isRecording = false;       //測定フラグ
         private bool isFileSaving = false;        //file保存フラグ
+        private bool isPIDControl = false;      //PID制御のフラグ
 
         private int useModeSelect = 0;     //メニューによるモードの切替フラグ
 
@@ -59,13 +60,20 @@ namespace DMMControlTestFormsApp1
         private int SaveSpanCmd = 2; //値決定しておかないと、ボタンおさん限りSaveSpanCmdが変な数値（限りなく0に近い数字）になってバカでかいデータになる？
 
         //PID制御の初期設定
-        private int PGain = 20;
-        private int DGain = 5;
-        private int IGain = 1;
+        private double PIDSpan = 1; //PID測定周期
+        private double mPIDSpan = 1000;
+        private double PGain = 20;
+        private double DGain = 5;
+        private double IGain = 1;
         private double TargetT = 0;
 
-        private float e_pre = 0;//微分用の近似値の初期値
-        private float ie = 0;//積分用の近似値の初期値
+        private double currErr = 0;//目標温度との差
+        private double currErr_pre = 0;//目標温度都の差の初期値
+        private double errRate = 0;//微分用の近似値
+        private double errSum = 0;//積分用の近似値
+
+        private double PIDOutput = 0;//PIDの操作量
+        private float PIDFloatOutput = 0f;//PIDの操作量(float)
 
         //csv,chart用データリスト
         List<String> elapsedTimes = new List<String>();
@@ -145,6 +153,13 @@ namespace DMMControlTestFormsApp1
             chart4.ChartAreas[0].AxisX.IsMarginVisible = false;     //X軸の余白をなくす
             chart5.ChartAreas[0].AxisX.Interval = 5;  // X軸の目盛りの間隔            
             chart5.ChartAreas[0].AxisX.IsMarginVisible = false;     //X軸の余白をなくす
+
+            //chartの色設定
+            chart1.ChartAreas[0].BackColor = Color.White;
+            chart2.ChartAreas[0].BackColor = Color.White;
+            chart3.ChartAreas[0].BackColor = Color.White;
+            chart4.ChartAreas[0].BackColor = Color.White;
+            chart5.ChartAreas[0].BackColor = Color.White;
         }
         private void PresetVdUp_Click(object sender, EventArgs e)   //0.1ずつ上げる
         {
@@ -261,6 +276,9 @@ namespace DMMControlTestFormsApp1
         {
             useModeSelect = 1;  
             ModeBox.Text = "パワー制御";
+            timer1.Stop();
+            stopwatch.Stop();
+
             //form2へ移行してFitting関数を出力し、適応
             Form2 form2 = new Form2();
             form2.Show();
@@ -291,6 +309,8 @@ namespace DMMControlTestFormsApp1
         }
         private void FittingEPCSVToolStrip_Click(object sender, EventArgs e)    //Form2からFitting関数を持ってくる
         {
+            timer1.Stop();
+            stopwatch.Stop();
             Form2 form2 = new Form2();
             form2.Show();
         }
@@ -299,6 +319,9 @@ namespace DMMControlTestFormsApp1
         {
             this.p = p;
             FunctionTextBox.Text = ToTeXPolynomial(p);      //textに出力
+            timer1.Start();
+            stopwatch.Start();
+
         }
         private string ToTeXPolynomial(double[] coefficients) //テキストボックスにW-T関数を表示させるもの　ｐの係数がcoefficients
         {
@@ -332,7 +355,7 @@ namespace DMMControlTestFormsApp1
             //立ち上げ設定
             useModeSelect = 0;
             //HeaterControl();
-            //SettingCondition();
+            //SettingCondition(); //電圧レンジの変更部分
             timer1.Start();     //timer作動
             stopwatch.Stop();
 
@@ -357,9 +380,7 @@ namespace DMMControlTestFormsApp1
             using (var rmSession4 = new ResourceManager())
             {
                 mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
-                mbSession4.RawIO.Write("TM1,TM2");     //状態のWrite
-                Thread.Sleep(TimeSpan.FromSeconds(0.1));  //WriteとReadでのスパンを決めないとRead出来ない
-                T0Box.Text = mbSession4.RawIO.ReadString();
+                mbSession4.RawIO.Write("RG1");     //状態のWrite
                 mbSession4.Dispose();
             }
         }
@@ -515,7 +536,7 @@ namespace DMMControlTestFormsApp1
                                     (94.021 * mVHeatVoltValue) +
                                     (-9.1571 * Math.Pow(mVHeatVoltValue, 2)) +
                                     (1.0395 * Math.Pow(mVHeatVoltValue, 3)) +
-                                    (-0.00615 * Math.Pow(mVHeatVoltValue, 4)) +
+                                    (-0.0615 * Math.Pow(mVHeatVoltValue, 4)) +
                                     (0.0015 * Math.Pow(mVHeatVoltValue, 5));
                     }
                     else    //y = 0.0001x5 - 0.0152x4 + 0.7319x3 - 17.132x2 + 243.09x - 748.01
@@ -609,6 +630,12 @@ namespace DMMControlTestFormsApp1
             Rseries3.BorderWidth = 3;
             Pseries4.BorderWidth = 3;
             Tseries5.BorderWidth = 3;
+            //色指定
+            Vseries1.Color = Color.DarkOrange;
+            Aseries2.Color = Color.SeaGreen;
+            Rseries3.Color = Color.DodgerBlue;
+            Pseries4.Color = Color.MediumSlateBlue;
+            Tseries5.Color = Color.IndianRed;
             //Chartに出力
             Vseries1.Points.AddY(SecondVoltValue);
             Aseries2.Points.AddY(SecondCurrValue);
@@ -661,12 +688,65 @@ namespace DMMControlTestFormsApp1
 
         }
 
-        private void HandleError(Exception ex)　//エラー処理
+        private void HandleError(Exception ex)　//通信エラー処理
         {
             timer1.Stop();
-            MessageBox.Show("各機器の接続状態を確認してください");
-        }
+            stopwatch.Stop();
+            MessageBox.Show("通信エラー");
 
+            // 測定におけるフラグによって分岐
+            if (isRecording == true)    //測定フラグがある時
+            {
+                DialogResult result = MessageBox.Show(
+                    "各機器の接続状態を確認してください。\n再試行しますか？",
+                    "エラー",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+                if (result == DialogResult.Yes)
+                {
+                    DialogResult resultRetry = MessageBox.Show(
+                        "データを保持したまま測定再開しますか？\nYes,No[データリセット]",
+                        "エラー",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning
+                        );
+                    if (resultRetry == DialogResult.Yes)
+                    {
+                        timer1.Start();
+                        stopwatch.Start();
+                    }
+                    else if (resultRetry == DialogResult.No)
+                    {
+                        ResetAndResumeMeasurement();    //データのリセット処理
+                        timer1.Start();
+                        stopwatch.Start();
+                    }
+                }
+                else if (result == DialogResult.No)
+                {
+                    return;
+                }
+            }
+            else if (isRecording == false)  //測定フラグないとき
+            {
+                DialogResult result = MessageBox.Show(
+                    "各機器の接続状態を確認してください。\n再試行しますか？",
+                    "エラー",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+                if (result == DialogResult.Yes)
+                {
+                    timer1.Start();
+                    stopwatch.Start();
+                }
+                else if (result == DialogResult.No)
+                {
+                    return;
+                }
+            }
+        }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)    //フォームが閉じられようとしている場合
         {
             if (e.CloseReason == CloseReason.UserClosing)
@@ -717,6 +797,8 @@ namespace DMMControlTestFormsApp1
         }
         private void ResetAndResumeMeasurement()　 // データをリセットする処理
         {
+            stopwatch.Reset();  //stopwatchのリセット
+
             // データを格納しているリストをクリア
             elapsedTimes.Clear();
             voltageValues.Clear();
@@ -818,8 +900,14 @@ namespace DMMControlTestFormsApp1
                 //時間、測定モード
                 string modetext = ModeBox.Text;
                 string stopwatchtext = StopWatchlabel.Text;
+                string PIDMode = PIDButton.Text;
+                string PGaintext = PgainBox.Text;
+                string IGaintext = IgainBox.Text;
+                string DGaintext = DgainBox.Text;
                 writer.WriteLine(modetext);
                 writer.WriteLine(stopwatchtext);
+                writer.WriteLine("PIDmode,PGain,IGain,DGain");
+                writer.WriteLine($"{PIDMode},{PGaintext},{IGaintext},{DGaintext}");
 
                 // 列の名前を出力
                 writer.WriteLine("測定時間,2次電圧(V),2次電流(A),2次抵抗(Ω),2次電力(VA),温度(℃),1次電圧(V),1次電流(A),1次電力(VA)");
@@ -843,8 +931,8 @@ namespace DMMControlTestFormsApp1
         {
             if (!isRecording)
             {
-                stopwatch.Start();
                 ResetAndResumeMeasurement();        //データのリセット処理かつCSVにデータが入りだす
+                stopwatch.Start();
 
                 RecordButton.BackColor = Color.Green;
                 RecordButton.Text = "記録中";
@@ -946,106 +1034,174 @@ namespace DMMControlTestFormsApp1
 
         }
 
-        //private void PIDControl(object sender, EventArgs e)//PID制御
-        //{
-        //    // 定数設定 ===============
-        //    if (int.TryParse(PgainBox.Text,out PGain))
-        //    {
-        //      return PGain;
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //    }
-        //    if (int.TryParse(DgainBox.Text, out DGain))
-        //    {
-        //      return DGain;
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //    }
-        //    if (int.TryParse(IgainBox.Text,out IGain))
-        //    {
-        //      return IGain;
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //    }
-        //    //PGain = 20;  // Pゲイン
-        //    //DGain = 5;   // Dゲイン
-        //    //IGain = 1;   // Iゲイン
-        //    //T = 0.5;// 制御周期[秒] Timer2の周期で設定（1sごとに固定するかも）
+        private void PIDtimer_Tick(object sender, EventArgs e)
+        {
+            // 制御周期分だけ待つ処理
 
-        //    // メインループ ===============　→これをTimer2で書く。
-        //    while (1)
-        //    {
-        //        // 制御周期分だけ待つ処理
-        //        sleep(T);
+            // 熱電対での測定の場合、温度での計算
+            if (useModeSelect == 2 ||
+                useModeSelect == 3 ||
+                useModeSelect == 4 ||
+                useModeSelect == 5)
+            {
+                PressT = roomT + deltaT; // 出力を取得。例:センサー情報を読み取る処理
 
-        //        // 現時刻における情報を取得
-        //        PressT = roomT + deltaT; // 出力を取得。例:センサー情報を読み取る処理
-        //        if (double.TryParse(TargetTBox.Text, out TargetT)) //目標値を取得。目標値が一定ならその値を代入する
-        //        {
-        //        }
-        //        else
-        //        {
-        //            MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //        }
-        //        // PID制御の式より、制御入力uを計算
-        //        e = TargetT - PressT;                // 誤差を計算 floatで統一させるか？
-        //        de = (e - e_pre) / T;        // 誤差の微分を近似計算
-        //        ie = ie + (e + e_pre) * T / 2; // 誤差の積分を近似計算
-        //        u = PGain * e + IGain * ie + DGain * de; // PID制御の式にそれぞれを代入　u:操作量　 "VA" + u　これの変更
-        //                                                 // 制御入力をシステムに与える処理 最低温度上昇を計測（1次を0.1V上げると、どれだけ温度が上がるのか）[予想13℃/V]
-        //        //give_u(u); // 例:モーターに電流を流す処理
-        //        if (u > 0)
-        //        {
-        //            if (float.TryParse(PresetVBox.Text, out PresetV))
-        //            {
-        //                PresetV += 0.1f; // テキストボックスの値を+0.1する
-        //                PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
+                // PID制御の式より、制御入力uを計算
+                currErr = TargetT - PressT;                // 偏差を計算
+                errRate = (currErr - currErr_pre) / PIDSpan;        // 偏差の微分を近似計算 
+                errSum = errSum + ((currErr + currErr_pre) * PIDSpan / 2); // 誤差の積分を近似計算 周期Tの時　errSum = errSum + (currErr + currErr_pre) * T / 2
+                PIDOutput = (PGain * currErr) + (IGain * errSum) + (DGain * errRate); // %なので％に伴う操作量を以下で指定
+                PIDConditionText.Text = $"PGain: {PGain}\nDGain: {DGain}\nIGain: {IGain}\n偏差: {currErr}\n微分: {errRate}\n積分: {errSum}\n出力(%): {PIDOutput}";
+                //制御入力をシステムに与える処理 電力での出力量を制御したい。２次電力と１次の電圧関係から出力をいじる。（温度が上がれば、抵抗値が変わり、1：１対応ではないっぽい）
 
-        //                using (var rmSession4 = new ResourceManager())
-        //                {
-        //                    mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
-        //                    string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
-        //                    mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
-        //                    mbSession4.Dispose();
-        //                }
-        //                else
-        //                {
-        //                    // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
-        //                    MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //                }       //        }
-        //            }
-        //        }
-        //        else (u < 0)
-        //        {
-        //            if (float.TryParse(PresetVBox.Text, out PresetV))
-        //            {
-        //                PresetV += 0.1f; // テキストボックスの値を+0.1する
-        //                PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
+                // 出力条件
+                if (PIDOutput > 100)//温度出力の最大設定
+                {
+                    if (float.TryParse(PresetVBox.Text, out PresetV))
+                    {
+                        PresetV += 1.0f; // テキストボックスの値を+1.0する
+                        PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
 
-        //                using (var rmSession4 = new ResourceManager())
-        //                {
-        //                    mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
-        //                    string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
-        //                    mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
-        //                    mbSession4.Dispose();
-        //                }
-        //                else
-        //                {
-        //                    // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
-        //                    MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //                }       //        }
-        //            }
-        //        }
-        //        // 次のために現時刻の情報を記録
-        //        e_pre = e;
-        //        }
-        //    }
+                        using (var rmSession4 = new ResourceManager())
+                        {
+                            mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
+                            string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
+                            mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
+                            mbSession4.Dispose();
+                        }
+                    }
+                    else
+                    {
+                        // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+                        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else if (PIDOutput < -100)//最低条件
+                {
+                    if (float.TryParse(PresetVBox.Text, out PresetV))
+                    {
+                        PresetV -= 0.1f; // テキストボックスの値を-0.1する
+                        PresetVBox.Text = PresetV.ToString(); // 新しい値をテキストボックスに設定する
+
+                        using (var rmSession4 = new ResourceManager())
+                        {
+                            mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
+                            string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
+                            mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
+                            mbSession4.Dispose();
+                        }
+                    }
+                    else
+                    {
+                        // テキストボックスの値が数値に変換できなかった場合のエラーハンドリング
+                        MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    PIDOutput = PIDOutput / 100;
+                    float PIDFloatOutput = (float)Math.Round(PIDOutput, 2);
+                    PresetV += PIDFloatOutput;
+                    PresetVBox.Text = PresetV.ToString();
+
+                    using (var rmSession4 = new ResourceManager())
+                    {
+                        mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
+                        string VTCommand = "VA" + PresetV.ToString(); // VTCommandを生成
+                        mbSession4.RawIO.Write(VTCommand);     //出力のWrite ON
+                        mbSession4.Dispose();
+                    }
+
+                }
+                // 次のために現時刻の情報を記録
+                currErr_pre = currErr;
+            }
+            else //電力制御での計算
+            {
+
+            }
+        }
+
+        private void PIDButton_Click(object sender, EventArgs e)
+        {
+            if (!isPIDControl)
+            {
+                isPIDControl = true;
+                // 定数設定 PID条件のテキストボックス殻の取得 ===============
+                if (!double.TryParse(PIDSpanBox.Text, out PIDSpan) ||
+                   !double.TryParse(PgainBox.Text, out PGain) ||
+                   !double.TryParse(DgainBox.Text, out DGain) ||
+                   !double.TryParse(IgainBox.Text, out IGain) ||
+                   !double.TryParse(TargetTBox.Text, out TargetT))
+                {
+                    MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                PIDtimer.Start();
+
+                PIDButton.BackColor = Color.DodgerBlue;
+                PIDButton.Text = "Auto(PID):ON";
+            }
+            else
+            {
+                isPIDControl = false;
+                PIDtimer.Stop();
+
+                PIDButton.BackColor = Color.White;
+                PIDButton.Text = "Auto(PID):OFF";
+            }
+        }
+
+        private void TargetTSetButton_Click(object sender, EventArgs e)
+        {
+            if (!double.TryParse(TargetTBox.Text, out TargetT))
+            {
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        private void PgainSetButton_Click(object sender, EventArgs e)
+        {
+            if (!double. TryParse(PgainBox.Text, out PGain))
+            {
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        private void DgainSetButton_Click(object sender, EventArgs e)
+        {
+            if (!double.TryParse(DgainBox.Text, out DGain))
+            {
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        private void IgainSetButton_Click(object sender, EventArgs e)
+        {
+            if (!double.TryParse(IgainBox.Text, out IGain))
+            {
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        private void PIDSpanSetButton_Click(object sender, EventArgs e)
+        {
+            if(!double.TryParse(PIDSpanBox.Text,out PIDSpan))
+            {
+                MessageBox.Show("有効な数値を入力してください。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            else
+            {
+                mPIDSpan = PIDSpan * 1000;
+                PIDtimer.Interval = (int)mPIDSpan;
+            }
+        }
+
     }
 }
 //やること
@@ -1053,6 +1209,9 @@ namespace DMMControlTestFormsApp1
 //開発したアプリケーションをほかのPCでも起動できるのか。PATHなどもしくは.exeとして実装出来ないのか
 //Uiの改善
 //PID制御の導入　(目標温度を入力すると自動で、制御ができるもの）
+//経過時間のリセット処理を入れないと再度起動するときにデータ数が合わずエラー出てまう
+//stopwatchのリセットをすることで経過時間の処理を正常化？
+//エラー処理を変更（測定フラグによる分岐）
 
 //timer1 測定周期　~0.5　
 
