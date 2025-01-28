@@ -29,11 +29,11 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea6 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea7 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea8 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea9 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea10 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea3 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea4 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea5 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.chart2 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.chart3 = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -143,8 +143,8 @@
             // 
             // chart1
             // 
-            chartArea6.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea6);
+            chartArea1.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea1);
             this.chart1.Location = new System.Drawing.Point(1029, 35);
             this.chart1.Margin = new System.Windows.Forms.Padding(4);
             this.chart1.Name = "chart1";
@@ -154,8 +154,8 @@
             // 
             // chart2
             // 
-            chartArea7.Name = "ChartArea1";
-            this.chart2.ChartAreas.Add(chartArea7);
+            chartArea2.Name = "ChartArea1";
+            this.chart2.ChartAreas.Add(chartArea2);
             this.chart2.Location = new System.Drawing.Point(1029, 218);
             this.chart2.Margin = new System.Windows.Forms.Padding(4);
             this.chart2.Name = "chart2";
@@ -165,8 +165,8 @@
             // 
             // chart3
             // 
-            chartArea8.Name = "ChartArea1";
-            this.chart3.ChartAreas.Add(chartArea8);
+            chartArea3.Name = "ChartArea1";
+            this.chart3.ChartAreas.Add(chartArea3);
             this.chart3.Location = new System.Drawing.Point(1029, 398);
             this.chart3.Margin = new System.Windows.Forms.Padding(4);
             this.chart3.Name = "chart3";
@@ -194,8 +194,8 @@
             // 
             // chart4
             // 
-            chartArea9.Name = "ChartArea1";
-            this.chart4.ChartAreas.Add(chartArea9);
+            chartArea4.Name = "ChartArea1";
+            this.chart4.ChartAreas.Add(chartArea4);
             this.chart4.Location = new System.Drawing.Point(1029, 581);
             this.chart4.Margin = new System.Windows.Forms.Padding(4);
             this.chart4.Name = "chart4";
@@ -205,8 +205,8 @@
             // 
             // chart5
             // 
-            chartArea10.Name = "ChartArea1";
-            this.chart5.ChartAreas.Add(chartArea10);
+            chartArea5.Name = "ChartArea1";
+            this.chart5.ChartAreas.Add(chartArea5);
             this.chart5.Location = new System.Drawing.Point(1029, 765);
             this.chart5.Margin = new System.Windows.Forms.Padding(4);
             this.chart5.Name = "chart5";
@@ -243,7 +243,7 @@
             this.TypeDToolStripMenuItem,
             this.TypeRToolStripMenuItem});
             this.ThermoCoupleToolStripMenuItem.Name = "ThermoCoupleToolStripMenuItem";
-            this.ThermoCoupleToolStripMenuItem.Size = new System.Drawing.Size(168, 26);
+            this.ThermoCoupleToolStripMenuItem.Size = new System.Drawing.Size(217, 26);
             this.ThermoCoupleToolStripMenuItem.Text = "熱電対モード";
             // 
             // TypeKToolStripMenuItem
@@ -277,8 +277,8 @@
             // ElectricPowerToolStripMenuItem
             // 
             this.ElectricPowerToolStripMenuItem.Name = "ElectricPowerToolStripMenuItem";
-            this.ElectricPowerToolStripMenuItem.Size = new System.Drawing.Size(168, 26);
-            this.ElectricPowerToolStripMenuItem.Text = "パワー制御";
+            this.ElectricPowerToolStripMenuItem.Size = new System.Drawing.Size(217, 26);
+            this.ElectricPowerToolStripMenuItem.Text = "パワーモード";
             this.ElectricPowerToolStripMenuItem.Click += new System.EventHandler(this.ElectricPowerToolStripMenuItem_Click);
             // 
             // FittingCSV
@@ -452,6 +452,7 @@
             this.TemperatureBox.BackColor = System.Drawing.SystemColors.InactiveBorder;
             this.TemperatureBox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.TemperatureBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.TemperatureBox.ForeColor = System.Drawing.Color.IndianRed;
             this.TemperatureBox.Location = new System.Drawing.Point(224, 503);
             this.TemperatureBox.Margin = new System.Windows.Forms.Padding(4);
             this.TemperatureBox.Multiline = true;
@@ -517,6 +518,7 @@
             this.SecondRBox.BackColor = System.Drawing.SystemColors.InactiveBorder;
             this.SecondRBox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.SecondRBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.SecondRBox.ForeColor = System.Drawing.Color.DodgerBlue;
             this.SecondRBox.Location = new System.Drawing.Point(224, 340);
             this.SecondRBox.Margin = new System.Windows.Forms.Padding(4);
             this.SecondRBox.Multiline = true;
@@ -640,6 +642,7 @@
             this.SecondVBox.BackColor = System.Drawing.SystemColors.InactiveBorder;
             this.SecondVBox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.SecondVBox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.SecondVBox.ForeColor = System.Drawing.Color.DarkOrange;
             this.SecondVBox.Location = new System.Drawing.Point(224, 242);
             this.SecondVBox.Margin = new System.Windows.Forms.Padding(4);
             this.SecondVBox.Multiline = true;
@@ -664,6 +667,7 @@
             this.SecondABox.BackColor = System.Drawing.SystemColors.InactiveBorder;
             this.SecondABox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.SecondABox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.SecondABox.ForeColor = System.Drawing.Color.SeaGreen;
             this.SecondABox.Location = new System.Drawing.Point(224, 291);
             this.SecondABox.Margin = new System.Windows.Forms.Padding(4);
             this.SecondABox.Multiline = true;
@@ -745,7 +749,7 @@
             this.IgainBox.Name = "IgainBox";
             this.IgainBox.Size = new System.Drawing.Size(159, 41);
             this.IgainBox.TabIndex = 54;
-            this.IgainBox.Text = "10";
+            this.IgainBox.Text = "0.03";
             // 
             // DgainBox
             // 
@@ -757,7 +761,7 @@
             this.DgainBox.Name = "DgainBox";
             this.DgainBox.Size = new System.Drawing.Size(159, 41);
             this.DgainBox.TabIndex = 55;
-            this.DgainBox.Text = "5";
+            this.DgainBox.Text = "0.04";
             // 
             // FrequencyBox
             // 
@@ -778,7 +782,7 @@
             this.PgainBox.Name = "PgainBox";
             this.PgainBox.Size = new System.Drawing.Size(159, 41);
             this.PgainBox.TabIndex = 58;
-            this.PgainBox.Text = "20";
+            this.PgainBox.Text = "0.8";
             // 
             // Pgain
             // 
@@ -839,6 +843,7 @@
             this.SecondVABox.BackColor = System.Drawing.SystemColors.InactiveBorder;
             this.SecondVABox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.SecondVABox.Font = new System.Drawing.Font("MS UI Gothic", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.SecondVABox.ForeColor = System.Drawing.Color.MediumSlateBlue;
             this.SecondVABox.Location = new System.Drawing.Point(224, 389);
             this.SecondVABox.Margin = new System.Windows.Forms.Padding(4);
             this.SecondVABox.Multiline = true;

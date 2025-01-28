@@ -275,7 +275,7 @@ namespace DMMControlTestFormsApp1
         private void ElectricPowerToolStripMenuItem_Click(object sender, EventArgs e) //パワー制御を使用
         {
             useModeSelect = 1;  
-            ModeBox.Text = "パワー制御";
+            ModeBox.Text = "パワーモード";
             timer1.Stop();
             stopwatch.Stop();
 
@@ -380,7 +380,7 @@ namespace DMMControlTestFormsApp1
             using (var rmSession4 = new ResourceManager())
             {
                 mbSession4 = (MessageBasedSession)rmSession4.Open("GPIB0::4::INSTR");  //特定の機器への挨拶
-                mbSession4.RawIO.Write("RG1");     //状態のWrite
+                mbSession4.RawIO.Write("RG0");     //状態のWrite 電圧レンジLoレンジモード
                 mbSession4.Dispose();
             }
         }

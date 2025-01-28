@@ -79,8 +79,8 @@ namespace DMMControlTestFormsApp1
                     {
                         lineNumber++;
 
-                        // 1~3行目を無視
-                        if (lineNumber <= 3)
+                        // 1~5行目を無視
+                        if (lineNumber <= 5)
                         {
                             continue;
                         }
@@ -120,7 +120,7 @@ namespace DMMControlTestFormsApp1
                 }
 
                 // フィッティング
-                p = Fit.Polynomial(d_EP_List.ToArray(), d_Temp_List.ToArray(), 1); //(フィッティングするｘ、ｙ, 近似次数)
+                p = Fit.Polynomial(d_EP_List.ToArray(), d_Temp_List.ToArray(), 3); //(フィッティングするｘ、ｙ, 近似次数)
 
                 // フィッティング結果の表示
                 double[] xfit = Generate.LinearSpaced(10, 0, 20); //(分割数, ｘの最低, xの上限）
